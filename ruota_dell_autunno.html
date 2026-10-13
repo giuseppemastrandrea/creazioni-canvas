@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ruota dell'Autunno 🍂</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Fredoka', 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #2d1810 0%, #512b1b 35%, #8c3a12 70%, #d97706 100%);
+            min-height: 100vh;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #canvas-leaves {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .wheel-shadow {
+            filter: drop-shadow(0px 12px 20px rgba(0, 0, 0, 0.45));
+        }
+
+        /* Custom Scrollbar for history */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d97706;
+            border-radius: 8px;
+        }
+
+        @keyframes bounce-pointer {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(4px) scale(1.05); }
+        }
+
+        .pointer-anim {
+            animation: bounce-pointer 0.3s ease-in-out infinite alternate;
+        }
+    </style>
+</head>
+<body class="text-stone-100 flex flex-col min-h-screen relative overflow-x-hidden">
+
+    <canvas id="canvas-leaves"></canvas>
+
+    <div class="relative z-10 flex-grow flex flex-col items-center justify-between p-3 sm:p-6 max-w-4xl mx-auto w-full">
+
+        <!-- Header -->
+        <header class="w-full text-center my-2">
+            <div class="inline-block bg-amber-900/60 border border-amber-600/40 backdrop-blur-md px-4 py-1 rounded-full text-amber-200 text-xs sm:text-sm font-semibold mb-2">
+                🍂 ATTIVITÀ DIDATTICA PER LA SCUOLA
+            </div>
+            <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-amber-300 drop-shadow-lg tracking-wide flex items-center justify-center gap-2">
+                RUOTA DELL'AUTUNNO 🍁
+            </h1>
+            <p class="text-amber-100 text-sm sm:text-base mt-1 font-medium">
+                Gira la ruota e scopri l'elemento autunnale!
+            </p>
+        </header>
+
+        <main class="w-full flex-grow flex flex-col items-center justify-center my-4 relative">
+            
+            <!-- Wheel Container with Pointer -->
+            <div class="relative flex items-center justify-center my-2">
+                
+                <!-- Pointer/Arrow pointing down at top center -->
+                <div class="absolute -top-5 z-30 pointer-events-none drop-shadow-xl transform transition-transform duration-150" id="pointer-wrapper">
+                    <svg width="48" height="56" viewBox="0 0 48 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M24 56L3.21539 20C1.29189 16.6687 3.69389 12.5 7.5359 12.5L40.4641 12.5C44.3061 12.5 46.7081 16.6687 44.7846 20L24 56Z" fill="#EF4444" stroke="#7F1D1D" stroke-width="3"/>
+                        <circle cx="24" cy="18" r="7" fill="#FEE2E2" stroke="#991B1B" stroke-width="2"/>
+                    </svg>
+                </div>
+
+                <!-- Canvas Wheel -->
+                <div class="relative p-3 bg-amber-950/70 border-4 border-amber-500/60 rounded-full backdrop-blur-md wheel-shadow">
+                    <canvas id="wheel-canvas" width="450" height="450" class="max-w-[85vw] max-h-[85vw] sm:max-w-[420px] sm:max-h-[420px] cursor-pointer rounded-full"></canvas>
+                    
+                    <!-- Center Spin Knob Button -->
+                    <button id="btn-center-spin" onclick="spinWheel()" class="absolute inset-0 m-auto w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-amber-400 via-orange-500 to-amber-700 hover:from-amber-300 hover:to-orange-400 text-stone-900 rounded-full font-black text-xs sm:text-sm border-4 border-amber-200 shadow-2xl flex flex-col items-center justify-center gap-0.5 transform active:scale-95 transition-all z-20">
+                        <span class="text-xl sm:text-2xl">🌀</span>
+                        <span class="tracking-wider uppercase font-extrabold text-[11px] sm:text-[13px] leading-none">GIRA!</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Controls Bar -->
+            <div class="mt-6 flex flex-wrap items-center justify-center gap-3 w-full max-w-md">
+                <button onclick="spinWheel()" id="btn-spin-main" class="flex-1 py-3.5 px-6 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-400 text-stone-950 text-lg font-extrabold rounded-2xl shadow-xl border-2 border-amber-300 transition transform active:scale-95 flex items-center justify-center gap-2">
+                    <span class="text-2xl">🎲</span> GIRA LA RUOTA
+                </button>
+                <button onclick="toggleHistoryModal()" class="py-3.5 px-4 bg-amber-950/80 hover:bg-amber-900 text-amber-200 font-bold rounded-2xl border border-amber-700/60 shadow-lg flex items-center gap-1.5 transition active:scale-95">
+                    <span>📜</span> Storico (<span id="history-count">0</span>)
+                </button>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="w-full text-center text-amber-200/70 text-xs py-2">
+            Attività interattiva per la scuola primaria • Tema Autunno
+        </footer>
+    </div>
+
+    <!-- RESULT MODAL -->
+    <div id="modal-result" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-gradient-to-b from-amber-900 to-stone-900 border-4 border-amber-400/80 rounded-3xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl transform transition-all scale-95">
+            
+            <div class="text-xs uppercase font-extrabold tracking-widest text-amber-300 bg-amber-950/80 py-1 px-3 rounded-full inline-block border border-amber-700/50 mb-3">
+                ✨ ELEMENTO ESTRATTO ✨
+            </div>
+
+            <!-- Big Emoji -->
+            <div id="modal-emoji" class="text-7xl sm:text-8xl my-3 filter drop-shadow-lg animate-bounce">
+                🍁
+            </div>
+
+            <!-- Name in STAMPATELLO MAIUSCOLO -->
+            <h2 id="modal-title" class="text-3xl sm:text-4xl font-extrabold text-amber-300 mb-4 tracking-wider uppercase drop-shadow">
+                FOGLIA ROSSA
+            </h2>
+
+            <!-- Educational Prompt Box -->
+            <div class="bg-amber-950/90 rounded-2xl p-4 mb-6 border border-amber-700/60 text-left">
+                <div class="text-amber-400 text-xs font-bold uppercase mb-1 flex items-center gap-1">
+                    <span>✏️</span> Sfida Didattica per gli alunni:
+                </div>
+                <p id="modal-prompt" class="text-amber-100 font-medium text-sm sm:text-base">
+                    Disegna questo elemento sul quaderno o inventa una bella frase!
+                </p>
+            </div>
+
+            <!-- Close / Spin again buttons -->
+            <div class="flex gap-3">
+                <button onclick="closeModal()" class="flex-1 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold rounded-2xl shadow-xl border border-emerald-400/40 transition active:scale-95 flex items-center justify-center gap-2">
+                    <span>✅</span> OK!
+                </button>
+                <button onclick="closeModal(); spinWheel();" class="py-3 px-5 bg-amber-800 hover:bg-amber-700 text-amber-100 font-extrabold rounded-2xl shadow-xl border border-amber-600/50 transition active:scale-95 flex items-center justify-center gap-1">
+                    <span>🔄</span> Rigira
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HISTORY MODAL -->
+    <div id="modal-history" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-gradient-to-b from-amber-950 to-stone-900 border-2 border-amber-600/60 rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col max-h-[80vh]">
+            <div class="flex justify-between items-center mb-4 border-b border-amber-800/60 pb-3">
+                <h3 class="text-xl font-bold text-amber-300 flex items-center gap-2">
+                    <span>📜</span> Elementi Estratti
+                </h3>
+                <button onclick="toggleHistoryModal()" class="text-amber-400 hover:text-amber-200 text-2xl font-bold">
+                    ✖
+                </button>
+            </div>
+
+            <div id="history-list" class="flex-1 overflow-y-auto space-y-2 pr-1 my-2">
+                <!-- History items populated dynamically -->
+                <p class="text-amber-200/60 text-center py-6 text-sm">Nessuna estrazione effettuata finora.</p>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-amber-800/60 flex justify-between items-center gap-3">
+                <button onclick="clearHistory()" class="px-3 py-2 bg-red-950/80 hover:bg-red-900 text-red-300 border border-red-700/50 text-xs font-bold rounded-xl transition">
+                    🗑️ Azzera Storico
+                </button>
+                <button onclick="toggleHistoryModal()" class="px-5 py-2 bg-amber-800 hover:bg-amber-700 text-amber-100 text-sm font-bold rounded-xl transition">
+                    Chiudi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- AUTUMN ITEMS DATA ---
+        // Each item has an emoji, title in STAMPATELLO MAIUSCOLO, color and fun prompt for school
+        const AUTUMN_ITEMS = [
+            { emoji: "🍁", title: "FOGLIA ROSSA", color: "#B91C1C", prompt: "Quali colori assume la foglia rossa in autunno? Scrivilo sul quaderno!" },
+            { emoji: "🍂", title: "FOGLIE SECCHE", color: "#D97706", prompt: "Quale suono fanno le foglie secche quando ci cammini sopra?" },
+            { emoji: "🌰", title: "CASTAGNA", color: "#78350F", prompt: "In quale involucro spinoso cresce la castagna?" },
+            { emoji: "🎃", title: "ZUCCA", color: "#EA580C", prompt: "Disegna una grande zucca arancione sul quaderno!" },
+            { emoji: "🍄", title: "FUNGO", color: "#991B1B", prompt: "Descrivi la forma di un fungo: ha il cappello e..." },
+            { emoji: "🦔", title: "RICCIO", color: "#854D0E", prompt: "Cosa fa il riccio durante l'inverno?" },
+            { emoji: "🐿️", title: "SCOIATTOLO", color: "#C2410C", prompt: "Quali provviste raccoglie lo scoiattolo per i mesi freddi?" },
+            { emoji: "🍇", title: "UVA", color: "#6D28D9", prompt: "Di che colore è l'uva autunnale? Inventa una frase con la parola UVA." },
+            { emoji: "🍎", title: "MELA ROSSA", color: "#DC2626", prompt: "La mela è un frutto dolcissimo: qual è il tuo frutto preferito?" },
+            { emoji: "🍐", title: "PERA", color: "#65A30D", prompt: "Disegna una pera verde o gialla e scrivi una frase." },
+            { emoji: "🪵", title: "LEGNA", color: "#451A03", prompt: "A cosa serve la legna quando fa freddo?" },
+            { emoji: "🦉", title: "GUFO", color: "#475569", prompt: "Il gufo è un animale notturno: che verso fa?" }
+        ];
+
+        // Wheel State
+        let currentAngle = 0; // Current rotation in radians
+        let isSpinning = false;
+        let drawnHistory = [];
+
+        const canvas = document.getElementById('wheel-canvas');
+        const ctx = canvas.getContext('2d');
+        const numSegments = AUTUMN_ITEMS.length;
+        const segmentAngle = (2 * Math.PI) / numSegments;
+
+        // Draw Wheel on Canvas
+        function drawWheel() {
+            const width = canvas.width;
+            const height = canvas.height;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = width / 2 - 12;
+
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(currentAngle);
+
+            for (let i = 0; i < numSegments; i++) {
+                const item = AUTUMN_ITEMS[i];
+                const startAngle = i * segmentAngle;
+                const endAngle = startAngle + segmentAngle;
+
+                // Draw Segment Slice
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, radius, startAngle, endAngle);
+                ctx.closePath();
+
+                ctx.fillStyle = item.color;
+                ctx.fill();
+
+                // Inner slice border line
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Draw Emoji & Text
+                ctx.save();
+                const angle = startAngle + segmentAngle / 2;
+                ctx.rotate(angle);
+
+                // Position emoji near edge
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+
+                // Emoji
+                ctx.font = "28px sans-serif";
+                ctx.fillText(item.emoji, radius * 0.72, 0);
+
+                // Text (Shortened title or clear label along slice)
+                ctx.fillStyle = "#FFFFFF";
+                ctx.font = "extrabold 10px 'Fredoka', sans-serif";
+                
+                // Truncate or fit title
+                let displayTitle = item.title;
+                if (displayTitle.length > 10) {
+                    displayTitle = displayTitle.split(" ")[0]; // First word if too long
+                }
+
+                ctx.save();
+                ctx.translate(radius * 0.42, 0);
+                ctx.fillText(displayTitle, 0, 0);
+                ctx.restore();
+
+                ctx.restore();
+            }
+
+            // Outer golden ring border
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, 2 * Math.PI);
+            ctx.strokeStyle = "#F59E0B";
+            ctx.lineWidth = 8;
+            ctx.stroke();
+
+            // Outer dots decoration
+            for (let i = 0; i < numSegments * 2; i++) {
+                const dotAngle = (i * Math.PI) / numSegments;
+                const dotX = (radius + 4) * Math.cos(dotAngle);
+                const dotY = (radius + 4) * Math.sin(dotAngle);
+
+                ctx.beginPath();
+                ctx.arc(dotX, dotY, 3, 0, 2 * Math.PI);
+                ctx.fillStyle = i % 2 === 0 ? "#FEF3C7" : "#F59E0B";
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        // Spin logic with deceleration
+        function spinWheel() {
+            if (isSpinning) return;
+
+            isSpinning = true;
+            document.getElementById('btn-spin-main').disabled = true;
+            document.getElementById('btn-center-spin').disabled = true;
+            document.getElementById('pointer-wrapper').classList.add('pointer-anim');
+
+            // Random extra spins (5 to 8 full rotations) plus random segment angle
+            const extraRotations = 5 + Math.random() * 3;
+            const targetRotation = extraRotations * 2 * Math.PI;
+            const startAngle = currentAngle;
+            const totalRotation = startAngle + targetRotation;
+
+            const duration = 4500; // ms
+            const startTime = performance.now();
+
+            function animateSpin(now) {
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+
+                // Cubic Ease-Out formula for realistic slowdown
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                currentAngle = startAngle + targetRotation * easeOut;
+
+                drawWheel();
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateSpin);
+                } else {
+                    // Spin finished!
+                    isSpinning = false;
+                    document.getElementById('btn-spin-main').disabled = false;
+                    document.getElementById('btn-center-spin').disabled = false;
+                    document.getElementById('pointer-wrapper').classList.remove('pointer-anim');
+
+                    calculateResult();
+                }
+            }
+
+            requestAnimationFrame(animateSpin);
+        }
+
+        // Determine winning segment at pointer position (top center = -Math.PI / 2)
+        function calculateResult() {
+            // Pointer is at -90 degrees (top center)
+            const pointerAngle = -Math.PI / 2;
+            
+            // Normalize angle within [0, 2PI)
+            let normalizedAngle = (pointerAngle - currentAngle) % (2 * Math.PI);
+            if (normalizedAngle < 0) {
+                normalizedAngle += 2 * Math.PI;
+            }
+
+            // Index of segment pointing top
+            const selectedIndex = Math.floor(normalizedAngle / segmentAngle) % numSegments;
+            const item = AUTUMN_ITEMS[selectedIndex];
+
+            // Add to history
+            drawnHistory.unshift({
+                ...item,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+
+            updateHistoryCount();
+            showResultModal(item);
+        }
+
+        function showResultModal(item) {
+            document.getElementById('modal-emoji').textContent = item.emoji;
+            document.getElementById('modal-title').textContent = item.title;
+            document.getElementById('modal-prompt').textContent = item.prompt;
+
+            const modal = document.getElementById('modal-result');
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-result').classList.add('hidden');
+        }
+
+        function toggleHistoryModal() {
+            const modal = document.getElementById('modal-history');
+            const listEl = document.getElementById('history-list');
+
+            if (modal.classList.contains('hidden')) {
+                // Populate list
+                if (drawnHistory.length === 0) {
+                    listEl.innerHTML = `<p class="text-amber-200/60 text-center py-6 text-sm">Nessuna estrazione effettuata finora.</p>`;
+                } else {
+                    listEl.innerHTML = drawnHistory.map(h => `
+                        <div class="flex items-center justify-between bg-amber-900/60 border border-amber-700/50 p-2.5 rounded-xl text-sm">
+                            <div class="flex items-center gap-3">
+                                <span class="text-2xl">${h.emoji}</span>
+                                <span class="font-extrabold text-amber-200 tracking-wide">${h.title}</span>
+                            </div>
+                            <span class="text-xs font-mono text-amber-400/80">${h.time}</span>
+                        </div>
+                    `).join('');
+                }
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function updateHistoryCount() {
+            document.getElementById('history-count').textContent = drawnHistory.length;
+        }
+
+        function clearHistory() {
+            drawnHistory = [];
+            updateHistoryCount();
+            toggleHistoryModal();
+        }
+
+        function initLeavesCanvas() {
+            const canvasLeaves = document.getElementById('canvas-leaves');
+            const ctxL = canvasLeaves.getContext('2d');
+
+            function resize() {
+                canvasLeaves.width = window.innerWidth;
+                canvasLeaves.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            const leafEmojis = ['🍁', '🍂', '🍃'];
+            const particles = Array.from({ length: 20 }, () => ({
+                x: Math.random() * canvasLeaves.width,
+                y: Math.random() * canvasLeaves.height,
+                size: Math.random() * 18 + 14,
+                speedY: Math.random() * 1.2 + 0.5,
+                speedX: Math.random() * 0.8 - 0.4,
+                rotation: Math.random() * 360,
+                rotSpeed: Math.random() * 2 - 1,
+                emoji: leafEmojis[Math.floor(Math.random() * leafEmojis.length)]
+            }));
+
+            function animateLeaves() {
+                ctxL.clearRect(0, 0, canvasLeaves.width, canvasLeaves.height);
+
+                particles.forEach(p => {
+                    p.y += p.speedY;
+                    p.x += Math.sin(p.y * 0.01) + p.speedX;
+                    p.rotation += p.rotSpeed;
+
+                    if (p.y > canvasLeaves.height + 40) {
+                        p.y = -30;
+                        p.x = Math.random() * canvasLeaves.width;
+                    }
+
+                    ctxL.save();
+                    ctxL.translate(p.x, p.y);
+                    ctxL.rotate((p.rotation * Math.PI) / 180);
+                    ctxL.font = `${p.size}px sans-serif`;
+                    ctxL.globalAlpha = 0.6;
+                    ctxL.fillText(p.emoji, -p.size / 2, p.size / 2);
+                    ctxL.restore();
+                });
+
+                requestAnimationFrame(animateLeaves);
+            }
+
+            animateLeaves();
+        }
+
+        // On Load Initialization
+        window.onload = function() {
+            initLeavesCanvas();
+            drawWheel();
+        };
+    </script>
+</body>
+</html>
