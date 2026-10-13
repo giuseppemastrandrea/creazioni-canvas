@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory dell'Autunno 🍂</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Fredoka', cursive, sans-serif;
+            background: linear-gradient(135deg, #2d1810 0%, #512b1b 35%, #8c3a12 70%, #d97706 100%);
+            min-height: 100vh;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* 3D Card Flip Styling */
+        .card-container {
+            perspective: 1000px;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.5s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+
+        .card-inner.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Front of card (Hidden state - Autumn Pattern) */
+        .card-front {
+            background: linear-gradient(145deg, #78350f, #451a03);
+            border: 3px solid #f59e0b;
+        }
+
+        /* Back of card (Revealed state) */
+        .card-back {
+            background: linear-gradient(145deg, #fffbeb, #fef3c7);
+            border: 3px solid #d97706;
+            transform: rotateY(180deg);
+        }
+
+        .card-matched .card-back {
+            background: linear-gradient(145deg, #ecfdf5, #d1fae5);
+            border-color: #10b981;
+            animation: pulse-match 0.6s ease-in-out;
+        }
+
+        @keyframes pulse-match {
+            0% { transform: rotateY(180deg) scale(1); }
+            50% { transform: rotateY(180deg) scale(1.08); }
+            100% { transform: rotateY(180deg) scale(1); }
+        }
+
+        /* Background Canvas Particle Effects */
+        #canvas-leaves {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d97706;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="text-stone-100 flex flex-col min-h-screen relative overflow-x-hidden">
+
+    <canvas id="canvas-leaves"></canvas>
+
+    <div class="relative z-10 flex-grow flex flex-col items-center justify-between p-2 sm:p-4 max-w-5xl mx-auto w-full">
+
+        <header class="w-full text-center my-2">
+            <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-amber-300 drop-shadow-md tracking-wide flex items-center justify-center gap-2">
+                <span>🍂</span> MEMORY DELL'AUTUNNO 🍁
+            </h1>
+            <p class="text-amber-100 text-xs sm:text-sm md:text-base mt-1 font-medium">
+                Trova tutte le 18 coppie autunnali!
+            </p>
+        </header>
+
+        <!-- Control Bar / Stats -->
+        <div class="w-full bg-amber-950/70 backdrop-blur-md rounded-2xl p-3 mb-3 border border-amber-600/40 shadow-xl flex flex-wrap items-center justify-between gap-2 text-sm sm:text-base">
+            <div class="flex items-center gap-4 sm:gap-6 mx-auto sm:mx-0">
+                <div class="flex items-center gap-1.5 bg-amber-900/60 px-3 py-1.5 rounded-xl border border-amber-700/50">
+                    <span class="text-lg">⏱️</span>
+                    <span class="font-bold text-amber-200">Tempo:</span>
+                    <span id="timer" class="font-mono font-bold text-amber-400 min-w-[45px]">00:00</span>
+                </div>
+                <div class="flex items-center gap-1.5 bg-amber-900/60 px-3 py-1.5 rounded-xl border border-amber-700/50">
+                    <span class="text-lg">🎯</span>
+                    <span class="font-bold text-amber-200">Mosse:</span>
+                    <span id="moves-count" class="font-bold text-amber-400 min-w-[20px]">0</span>
+                </div>
+                <div class="flex items-center gap-1.5 bg-amber-900/60 px-3 py-1.5 rounded-xl border border-amber-700/50">
+                    <span class="text-lg">✨</span>
+                    <span class="font-bold text-amber-200">Coppie:</span>
+                    <span id="pairs-count" class="font-bold text-emerald-400">0 / 18</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 mx-auto sm:mx-0">
+                <!-- Restart Button -->
+                <button onclick="resetGame()" class="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold rounded-xl shadow-lg border border-amber-400/30 transition transform active:scale-95 flex items-center gap-1.5">
+                    <span>🔄</span> Nuova Partita
+                </button>
+            </div>
+        </div>
+
+        <main class="w-full flex-grow flex items-center justify-center my-1">
+            <div id="grid-container" class="grid grid-cols-6 gap-1.5 sm:gap-2.5 md:gap-3 w-full max-w-[700px] aspect-square">
+                <!-- Cards will be dynamically inserted here by JavaScript -->
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="w-full text-center text-amber-200/70 text-xs py-2">
+            Gioco educativo per la scuola primaria • Tema Autunno
+        </footer>
+    </div>
+
+    <div id="modal-victory" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-gradient-to-b from-amber-900 to-stone-900 border-2 border-amber-500/60 rounded-3xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl transform transition-all scale-95 animate-bounce-short">
+            <div class="text-6xl mb-3 animate-bounce">🏆</div>
+            <h2 class="text-3xl font-extrabold text-amber-300 mb-2">Bravissimo!</h2>
+            <p class="text-amber-100 mb-6 font-medium">Hai trovato tutte le 18 coppie dell'Autunno!</p>
+            
+            <div class="bg-amber-950/80 rounded-2xl p-4 mb-6 border border-amber-700/50 space-y-2 text-left">
+                <div class="flex justify-between items-center">
+                    <span class="text-amber-300 font-semibold">⏱️ Tempo impiegato:</span>
+                    <span id="final-time" class="font-mono font-bold text-amber-100 text-lg">00:00</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-amber-300 font-semibold">🎯 Mosse totali:</span>
+                    <span id="final-moves" class="font-bold text-amber-100 text-lg">0</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-amber-300 font-semibold">⭐ Valutazione:</span>
+                    <span id="final-stars" class="text-amber-400 text-lg">⭐⭐⭐</span>
+                </div>
+            </div>
+
+            <button onclick="resetGame(); closeModal();" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-lg font-bold rounded-2xl shadow-xl transition transform active:scale-95 border border-emerald-400/40">
+                🎮 Gioca di Nuovo
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- 18 AUTUMN DATA ITEMS ---
+        // Each item has an emoji and text strictly in STAMPATELLO MAIUSCOLO
+        const AUTUMN_ITEMS = [
+            { id: 1, emoji: "🍁", text: "FOGLIA ROSSA" },
+            { id: 2, emoji: "🍂", text: "FOGLIE SECCHE" },
+            { id: 3, emoji: "🌰", text: "CASTAGNA" },
+            { id: 4, emoji: "🎃", text: "ZUCCA" },
+            { id: 5, emoji: "🍄", text: "FUNGO" },
+            { id: 6, emoji: "🦔", text: "RICCIO" },
+            { id: 7, emoji: "🐿️", text: "SCOIATTOLO" },
+            { id: 8, emoji: "🍇", text: "UVA" },
+            { id: 9, emoji: "🍎", text: "MELA ROSSA" },
+            { id: 10, emoji: "🍐", text: "PERA" },
+            { id: 11, emoji: "🪵", text: "LEGNA" },
+            { id: 12, emoji: "🦉", text: "GUFO" },
+            { id: 13, emoji: "☔", text: "OMBRELLO" },
+            { id: 14, emoji: "🌧️", text: "PIOGGIA" },
+            { id: 15, emoji: "☕", text: "TAZZA CALDA" },
+            { id: 16, emoji: "🧣", text: "SCIARPA" },
+            { id: 17, emoji: "🧦", text: "CALZINI" },
+            { id: 18, emoji: "🌽", text: "MAIS" }
+        ];
+
+        // Game State Variables
+        let cardsData = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves = 0;
+        let timerSeconds = 0;
+        let timerInterval = null;
+        let isTimerRunning = false;
+        let isBoardLocked = false;
+
+        function startTimer() {
+            if (isTimerRunning) return;
+            isTimerRunning = true;
+            timerInterval = setInterval(() => {
+                timerSeconds++;
+                const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+                const secs = (timerSeconds % 60).toString().padStart(2, '0');
+                document.getElementById('timer').textContent = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+        }
+
+        function resetTimer() {
+            stopTimer();
+            timerSeconds = 0;
+            document.getElementById('timer').textContent = "00:00";
+        }
+
+        // Shuffle cards array (Fisher-Yates Algorithm)
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // Initialize / Reset Game
+        function resetGame() {
+            resetTimer();
+            moves = 0;
+            matchedPairs = 0;
+            flippedCards = [];
+            isBoardLocked = false;
+
+            document.getElementById('moves-count').textContent = '0';
+            document.getElementById('pairs-count').textContent = '0 / 18';
+
+            // Create 36 cards from 18 items (pairs)
+            const deck = [];
+            AUTUMN_ITEMS.forEach(item => {
+                deck.push({ ...item, uniqueId: Math.random() });
+                deck.push({ ...item, uniqueId: Math.random() });
+            });
+
+            cardsData = shuffleArray(deck);
+            renderGrid();
+        }
+
+        function renderGrid() {
+            const container = document.getElementById('grid-container');
+            container.innerHTML = '';
+
+            cardsData.forEach((item, index) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card-container w-full h-full';
+                cardEl.dataset.index = index;
+
+                cardEl.innerHTML = `
+                    <div class="card-inner" id="card-${index}">
+                        <!-- Card Front (Covered) -->
+                        <div class="card-front text-amber-200">
+                            <span class="text-xl sm:text-2xl md:text-3xl opacity-80">🍁</span>
+                        </div>
+                        <!-- Card Back (Revealed) -->
+                        <div class="card-back p-1 select-none">
+                            <span class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-0.5 sm:mb-1 filter drop-shadow">${item.emoji}</span>
+                            <span class="text-[9px] sm:text-[11px] md:text-[12px] font-extrabold text-amber-950 tracking-wider leading-tight uppercase px-0.5 text-center">
+                                ${item.text}
+                            </span>
+                        </div>
+                    </div>
+                `;
+
+                cardEl.addEventListener('click', () => handleCardClick(index));
+                container.appendChild(cardEl);
+            });
+        }
+
+        function handleCardClick(index) {
+            if (isBoardLocked) return;
+
+            const cardInner = document.getElementById(`card-${index}`);
+            
+            // Ignore if already flipped or matched
+            if (cardInner.classList.contains('is-flipped') || cardInner.parentElement.classList.contains('card-matched')) {
+                return;
+            }
+
+            // Start timer on first interaction
+            if (!isTimerRunning) {
+                startTimer();
+            }
+
+            // Flip Card
+            cardInner.classList.add('is-flipped');
+            flippedCards.push({ index, item: cardsData[index] });
+
+            // Check match if 2 cards flipped
+            if (flippedCards.length === 2) {
+                moves++;
+                document.getElementById('moves-count').textContent = moves;
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            isBoardLocked = true;
+            const [first, second] = flippedCards;
+
+            if (first.item.id === second.item.id) {
+                // Match Found!
+                setTimeout(() => {
+                    const card1 = document.getElementById(`card-${first.index}`);
+                    const card2 = document.getElementById(`card-${second.index}`);
+
+                    card1.parentElement.classList.add('card-matched');
+                    card2.parentElement.classList.add('card-matched');
+
+                    matchedPairs++;
+                    document.getElementById('pairs-count').textContent = `${matchedPairs} / 18`;
+
+                    flippedCards = [];
+                    isBoardLocked = false;
+
+                    // Victory check
+                    if (matchedPairs === 18) {
+                        handleVictory();
+                    }
+                }, 400);
+            } else {
+                // Not a match
+                setTimeout(() => {
+                    document.getElementById(`card-${first.index}`).classList.remove('is-flipped');
+                    document.getElementById(`card-${second.index}`).classList.remove('is-flipped');
+
+                    flippedCards = [];
+                    isBoardLocked = false;
+                }, 1100);
+            }
+        }
+
+        function handleVictory() {
+            stopTimer();
+            setTimeout(() => {
+                // Set stats in modal
+                const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+                const secs = (timerSeconds % 60).toString().padStart(2, '0');
+                document.getElementById('final-time').textContent = `${mins}:${secs}`;
+                document.getElementById('final-moves').textContent = moves;
+
+                // Simple star rating calculation
+                let stars = "⭐⭐⭐";
+                if (moves > 36) stars = "⭐⭐";
+                if (moves > 50) stars = "⭐";
+                document.getElementById('final-stars').textContent = stars;
+
+                document.getElementById('modal-victory').classList.remove('hidden');
+            }, 600);
+        }
+
+        function closeModal() {
+            document.getElementById('modal-victory').classList.add('hidden');
+        }
+
+        function initLeavesCanvas() {
+            const canvas = document.getElementById('canvas-leaves');
+            const ctx = canvas.getContext('2d');
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            const leafEmojis = ['🍁', '🍂', '🍃'];
+            const particles = Array.from({ length: 22 }, () => ({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 18 + 14,
+                speedY: Math.random() * 1.2 + 0.5,
+                speedX: Math.random() * 0.8 - 0.4,
+                rotation: Math.random() * 360,
+                rotSpeed: Math.random() * 2 - 1,
+                emoji: leafEmojis[Math.floor(Math.random() * leafEmojis.length)]
+            }));
+
+            function animateLeaves() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                particles.forEach(p => {
+                    p.y += p.speedY;
+                    p.x += Math.sin(p.y * 0.01) + p.speedX;
+                    p.rotation += p.rotSpeed;
+
+                    if (p.y > canvas.height + 40) {
+                        p.y = -30;
+                        p.x = Math.random() * canvas.width;
+                    }
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rotation * Math.PI) / 180);
+                    ctx.font = `${p.size}px sans-serif`;
+                    ctx.globalAlpha = 0.6;
+                    ctx.fillText(p.emoji, -p.size / 2, p.size / 2);
+                    ctx.restore();
+                });
+
+                requestAnimationFrame(animateLeaves);
+            }
+
+            animateLeaves();
+        }
+
+        // Initialize Game on Load
+        window.onload = function() {
+            initLeavesCanvas();
+            resetGame();
+        };
+    </script>
+</body>
+</html>
