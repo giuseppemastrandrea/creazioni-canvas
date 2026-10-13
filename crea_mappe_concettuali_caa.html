@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mappe Concettuali CAA - Scuola Primaria (ARASAAC)</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- html2canvas for High-Res PNG Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- Google Fonts for Readability (Lexend & Fredoka) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Lexend:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Lexend', 'sans-serif'],
+                        display: ['Fredoka', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Lexend', sans-serif;
+            background-color: #f8fafc;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Node Dragging & Styling */
+        .caa-node {
+            touch-action: none;
+            cursor: grab;
+            transition: box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .caa-node:active {
+            cursor: grabbing;
+            box-shadow: 0 12px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Canvas Background Patterns */
+        .bg-pattern-dots {
+            background-image: radial-gradient(#cbd5e1 1.8px, transparent 1.8px);
+            background-size: 24px 24px;
+        }
+
+        .bg-pattern-grid {
+            background-image: linear-gradient(to right, #e2e8f0 1px, transparent 1px),
+                              linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+
+        .bg-pattern-blank {
+            background-color: #ffffff;
+        }
+
+        /* Print Optimization */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body, #app-root {
+                background: white !important;
+                overflow: visible !important;
+                height: auto !important;
+            }
+            #workspace-wrapper {
+                background: white !important;
+                overflow: visible !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+            }
+            #canvas-stage {
+                transform: scale(0.95) !important;
+                transform-origin: center top !important;
+            }
+            @page {
+                size: A4 landscape;
+                margin: 0.8cm;
+            }
+        }
+
+        /* Scrollbar styles */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col overflow-hidden text-slate-800 antialiased">
+
+    <!-- Top Header -->
+    <header class="no-print bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between z-30 shadow-sm shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="bg-gradient-to-tr from-sky-500 to-indigo-600 text-white p-2.5 rounded-xl shadow-md">
+                <i class="fa-solid fa-diagram-project text-xl"></i>
+            </div>
+            <div>
+                <h1 class="font-display font-bold text-lg md:text-xl text-slate-800 leading-tight flex items-center gap-2">
+                    Mappe CAA <span class="bg-sky-100 text-sky-800 text-xs px-2 py-0.5 rounded-md font-sans font-bold">ARASAAC</span>
+                </h1>
+                <p class="text-xs text-slate-500 hidden sm:block">Generatore di Mappe Concettuali con Pittogrammi per la Scuola Primaria</p>
+            </div>
+        </div>
+
+        <!-- Action Controls Header -->
+        <div class="flex items-center gap-2">
+            <button onclick="loadPresetAutumn()" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs sm:text-sm font-bold rounded-xl border border-amber-200 transition flex items-center gap-1.5 shadow-sm active:scale-95">
+                <i class="fa-solid fa-leaf text-amber-500"></i>
+                <span>Esempio "Autunno"</span>
+            </button>
+            
+            <button onclick="triggerPrint()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-bold rounded-xl border border-slate-300 transition flex items-center gap-1.5 active:scale-95">
+                <i class="fa-solid fa-print text-slate-600"></i>
+                <span class="hidden sm:inline">Stampa / PDF</span>
+            </button>
+
+            <button onclick="exportToPNG()" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow transition flex items-center gap-1.5 active:scale-95">
+                <i class="fa-solid fa-file-image"></i>
+                <span>PNG</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Application Body -->
+    <div id="app-root" class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+
+        <!-- Sidebar Panel -->
+        <aside class="no-print w-full md:w-80 lg:w-96 bg-white border-r border-slate-200 flex flex-col shrink-0 z-20 shadow-md h-auto md:h-full max-h-[48vh] md:max-h-none overflow-y-auto">
+            
+            <!-- Navigation Tabs -->
+            <div class="flex border-b border-slate-200 bg-slate-50 sticky top-0 z-10">
+                <button id="tab-btn-content" onclick="switchSidebarTab('content')" class="flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider text-sky-600 border-b-2 border-sky-600 flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-pen-to-square"></i> Contenuti
+                </button>
+                <button id="tab-btn-style" onclick="switchSidebarTab('style')" class="flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider text-slate-500 border-b-2 border-transparent hover:text-slate-700 flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-sliders"></i> Personalizza
+                </button>
+            </div>
+
+            <!-- TAB 1: CONTENT CREATION -->
+            <div id="tab-content" class="p-4 space-y-4 flex-1">
+                
+                <!-- Central Concept -->
+                <div class="space-y-1.5">
+                    <label for="input-central" class="block text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-dot text-amber-500"></i> Concetto Centrale
+                    </label>
+                    <input type="text" id="input-central" value="autunno" placeholder="Es. autunno" 
+                        class="w-full px-3.5 py-2.5 border-2 border-slate-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 rounded-xl text-slate-900 font-bold uppercase transition outline-none">
+                    <p class="text-[11px] text-slate-400">La parola chiave al centro della mappa concettuale.</p>
+                </div>
+
+                <!-- Peripheral Concepts -->
+                <div class="space-y-1.5">
+                    <label for="input-peripheral" class="block text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                        <i class="fa-solid fa-diagram-nested text-sky-500"></i> Concetti Periferici (1 per riga)
+                    </label>
+                    <textarea id="input-peripheral" rows="7" placeholder="foglia&#10;castagna&#10;pioggia&#10;ombrello&#10;fungo&#10;uva&#10;vento&#10;scoiattolo"
+                        class="w-full px-3.5 py-2.5 border-2 border-slate-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 rounded-xl text-slate-900 font-medium transition outline-none resize-none leading-relaxed">foglia
+castagna
+pioggia
+ombrello
+fungo
+uva
+vento
+scoiattolo</textarea>
+                    <p class="text-[11px] text-slate-400">Ogni riga diventerà un nodo collegato al centro.</p>
+                </div>
+
+                <!-- Primary Generate Action Button -->
+                <button id="btn-generate" onclick="handleGenerateClick()" class="w-full py-3.5 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 text-white font-bold text-sm rounded-xl shadow-lg hover:shadow-sky-200 transition-all flex items-center justify-center gap-2 active:scale-98">
+                    <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+                    <span>GENERA MAPPA CONCETTUALE</span>
+                </button>
+
+                <!-- Worksheet Header Checkbox -->
+                <div class="pt-3 border-t border-slate-200 space-y-2">
+                    <label class="flex items-center gap-2.5 cursor-pointer">
+                        <input type="checkbox" id="check-worksheet-header" onchange="toggleWorksheetHeader()" class="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500">
+                        <span class="text-xs font-bold text-slate-700">Mostra Intestazione Scheda (Nome, Data, Classe)</span>
+                    </label>
+                </div>
+
+            </div>
+
+            <!-- TAB 2: STYLING OPTIONS -->
+            <div id="tab-style" class="p-4 space-y-5 hidden flex-1">
+                
+                <!-- Pictogram Size Selector -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-2 flex items-center gap-1.5">
+                        <i class="fa-solid fa-image text-indigo-500"></i> Dimensione Pittogrammi
+                    </label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setNodeSize('sm')" id="btn-size-sm" class="btn-size py-2 border rounded-xl text-xs font-bold hover:bg-slate-100 text-slate-700 text-center">Piccolo</button>
+                        <button onclick="setNodeSize('md')" id="btn-size-md" class="btn-size py-2 border border-sky-500 bg-sky-50 text-sky-700 rounded-xl text-xs font-bold text-center">Medio</button>
+                        <button onclick="setNodeSize('lg')" id="btn-size-lg" class="btn-size py-2 border rounded-xl text-xs font-bold hover:bg-slate-100 text-slate-700 text-center">Grande</button>
+                    </div>
+                </div>
+
+                <!-- Text Font Size -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5">
+                            <i class="fa-solid fa-font text-indigo-500"></i> Dimensione Testo
+                        </label>
+                        <span id="text-size-label" class="text-xs font-bold text-sky-600">18px</span>
+                    </div>
+                    <input type="range" id="range-text-size" min="12" max="28" value="18" oninput="updateTextSize(this.value)" class="w-full accent-sky-600 cursor-pointer">
+                </div>
+
+                <!-- Radial Circle Radius -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrows-spin text-indigo-500"></i> Raggio Distribuzione
+                        </label>
+                        <span id="radius-label" class="text-xs font-bold text-sky-600">220px</span>
+                    </div>
+                    <input type="range" id="range-radius" min="140" max="380" value="220" oninput="updateRadius(this.value)" class="w-full accent-sky-600 cursor-pointer">
+                </div>
+
+                <!-- Lines Customization -->
+                <div class="space-y-3 pt-3 border-t border-slate-200">
+                    <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide">Linee di Collegamento</h4>
+                    
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-slate-600 font-semibold">Spessore Linee</span>
+                        <input type="range" id="range-line-width" min="1" max="8" value="3" oninput="updateLineStyles()" class="w-28 accent-sky-600">
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-slate-600 font-semibold">Colore Linee</span>
+                        <input type="color" id="picker-line-color" value="#0284c7" onchange="updateLineStyles()" class="w-8 h-8 rounded-lg border border-slate-300 cursor-pointer">
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-slate-600 font-semibold">Stile Tratto</span>
+                        <select id="select-line-dash" onchange="updateLineStyles()" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 font-semibold">
+                            <option value="solid">Continua</option>
+                            <option value="dashed">Tratteggiata</option>
+                            <option value="dotted">Puntinata</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Colors & Canvas Style -->
+                <div class="space-y-3 pt-3 border-t border-slate-200">
+                    <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide">Colori e Sfondo</h4>
+
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-slate-600 font-semibold">Sfondo Centro</span>
+                        <input type="color" id="picker-center-bg" value="#fef08a" onchange="updateNodeColors()" class="w-8 h-8 rounded-lg border border-slate-300 cursor-pointer">
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-slate-600 font-semibold">Sfondo Nodi</span>
+                        <input type="color" id="picker-node-bg" value="#ffffff" onchange="updateNodeColors()" class="w-8 h-8 rounded-lg border border-slate-300 cursor-pointer">
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-slate-600 font-semibold">Griglia Workspace</span>
+                        <select id="select-bg-pattern" onchange="setCanvasBackground(this.value)" class="text-xs border border-slate-300 rounded-lg px-2 py-1.5 font-semibold">
+                            <option value="dots">Puntinata</option>
+                            <option value="grid">Quadretti</option>
+                            <option value="blank">Bianco</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Reset Radial Positions -->
+                <button onclick="repositionNodesRadially()" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-300 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-right text-slate-500"></i> Ripristina Posizioni Cerchio
+                </button>
+
+            </div>
+        </aside>
+
+        <!-- Interactive Workspace / Canvas Stage -->
+        <main id="workspace-wrapper" class="flex-1 bg-slate-100 relative overflow-hidden flex flex-col bg-pattern-dots">
+            
+            <!-- Canvas Floating Controls Toolbar -->
+            <div class="no-print absolute top-3 right-3 z-20 bg-white/90 backdrop-blur rounded-2xl shadow-md border border-slate-200 p-1 flex items-center gap-1">
+                <button onclick="zoomCanvas(0.1)" title="Zoom In" class="p-2 hover:bg-slate-100 rounded-xl text-slate-700 transition active:scale-90">
+                    <i class="fa-solid fa-magnifying-glass-plus"></i>
+                </button>
+                <button onclick="zoomCanvas(-0.1)" title="Zoom Out" class="p-2 hover:bg-slate-100 rounded-xl text-slate-700 transition active:scale-90">
+                    <i class="fa-solid fa-magnifying-glass-minus"></i>
+                </button>
+                <button onclick="resetZoomAndCenter()" title="Ripristina Zoom e Centra" class="px-2.5 py-1 hover:bg-slate-100 rounded-xl text-slate-700 transition text-xs font-extrabold">
+                    100%
+                </button>
+            </div>
+
+            <!-- Optional Worksheet Printable Header -->
+            <div id="worksheet-header" class="hidden p-6 pb-2 max-w-5xl mx-auto w-full border-b-2 border-slate-900 mb-2">
+                <div class="flex justify-between items-end">
+                    <div>
+                        <h2 class="font-display font-extrabold text-2xl text-slate-900 uppercase tracking-wide" id="worksheet-title">MAPPA CONCETTUALE CAA</h2>
+                        <p class="text-xs text-slate-600 font-semibold">Materiale Didattico Scuola Primaria - Simboli ARASAAC</p>
+                    </div>
+                    <div class="text-right space-y-1 font-bold text-xs md:text-sm">
+                        <div>NOME: __________________________</div>
+                        <div>DATA: ____________ CLASSE: _____</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Stage Area -->
+            <div id="stage-viewport" class="flex-1 relative w-full h-full overflow-hidden">
+                
+                <!-- Scalable Transform Container -->
+                <div id="canvas-stage" class="absolute inset-0 origin-center transition-transform duration-75">
+                    
+                    <!-- SVG Overlay for Connecting Lines -->
+                    <svg id="svg-lines" class="absolute inset-0 w-full h-full pointer-events-none z-0">
+                        <defs>
+                            <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#0284c7" />
+                            </marker>
+                        </defs>
+                    </svg>
+
+                    <!-- Nodes Container -->
+                    <div id="nodes-layer" class="absolute inset-0 z-10">
+                        <!-- Dynamic DOM Nodes will be injected here -->
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Loading Spinner Overlay -->
+            <div id="loading-overlay" class="hidden absolute inset-0 bg-slate-900/40 backdrop-blur-sm z-40 flex flex-col items-center justify-center text-white">
+                <div class="bg-white text-slate-800 p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-3 max-w-xs text-center border border-slate-100">
+                    <i class="fa-solid fa-circle-notch fa-spin text-4xl text-sky-600"></i>
+                    <div>
+                        <h4 class="font-bold text-base">Ricerca Pittogrammi</h4>
+                        <p class="text-xs text-slate-500 mt-1">Chiamata API ad ARASAAC in corso...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Drag Hint -->
+            <div class="no-print absolute bottom-3 left-3 bg-white/90 backdrop-blur px-3 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-600 shadow-sm flex items-center gap-2 pointer-events-none">
+                <i class="fa-solid fa-hand-pointer text-sky-500"></i>
+                <span>Trascina i nodi liberamente. Clicca un nodo per modificare il pittogramma.</span>
+            </div>
+        </main>
+    </div>
+
+    <!-- ARASAAC Pictogram Switcher Modal -->
+    <div id="modal-pictogram" class="no-print fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
+            
+            <!-- Modal Header -->
+            <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                        <i class="fa-solid fa-icons text-sky-600"></i> Modifica Pittogramma
+                    </h3>
+                    <p class="text-xs text-slate-500">Seleziona un'immagine alternativa per: <span id="modal-node-title" class="font-bold uppercase text-sky-700">PAROLA</span></p>
+                </div>
+                <button onclick="closePictogramModal()" class="w-8 h-8 rounded-full hover:bg-slate-200 text-slate-500 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <!-- Modal Search Controls -->
+            <div class="p-4 border-b border-slate-100 bg-white">
+                <form onsubmit="handleModalSearchSubmit(event)" class="flex gap-2">
+                    <input type="text" id="modal-search-input" placeholder="Cerca altra parola..." class="flex-1 px-3.5 py-2 border-2 border-slate-300 rounded-xl text-sm font-bold uppercase focus:border-sky-500 outline-none">
+                    <button type="submit" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-sm font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <span>Cerca</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Modal Pictogram Grid Results -->
+            <div id="modal-results-grid" class="p-4 overflow-y-auto flex-1 grid grid-cols-3 sm:grid-cols-4 gap-3 min-h-[200px]">
+                <!-- Loaded dynamically -->
+            </div>
+
+            <!-- Modal Footer Actions -->
+            <div class="p-3.5 bg-slate-50 border-t border-slate-200 flex justify-between items-center text-xs">
+                <button onclick="clearNodeImage()" class="text-slate-500 hover:text-red-600 font-bold flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-eye-slash"></i> Nascondi Immagine (Solo Testo)
+                </button>
+                <button onclick="closePictogramModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition">
+                    Chiudi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global Application State Object
+        const state = {
+            centralConcept: 'autunno',
+            peripheralConcepts: ['foglia', 'castagna', 'pioggia', 'ombrello', 'fungo', 'uva', 'vento', 'scoiattolo'],
+            nodes: [], // { id, text, arasaacId, customImgUrl, x, y, isCenter }
+            nodeSize: 'md', // sm, md, lg
+            textSize: 18,
+            radius: 220,
+            lineColor: '#0284c7',
+            lineWidth: 3,
+            lineDash: 'solid',
+            centerBg: '#fef08a',
+            nodeBg: '#ffffff',
+            zoom: 1.0,
+            activeModalNodeId: null
+        };
+
+        // Size Presets configuration
+        const SIZE_CONFIGS = {
+            sm: { imgSize: 65, boxPadding: '10px' },
+            md: { imgSize: 95, boxPadding: '14px' },
+            lg: { imgSize: 130, boxPadding: '18px' }
+        };
+
+        // In-memory API Cache to prevent redundant requests
+        const arasaacApiCache = new Map();
+
+        /**
+         * Robust fetcher for ARASAAC Italian Pictogram Search API
+         * API: https://api.arasaac.org/v1/pictograms/it/search/{PAROLA}
+         */
+        async function fetchArasaacPictograms(word) {
+            const cleanWord = word.trim().toLowerCase();
+            if (!cleanWord) return [];
+
+            if (arasaacApiCache.has(cleanWord)) {
+                return arasaacApiCache.get(cleanWord);
+            }
+
+            try {
+                // Fetch with 4-second AbortController timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+                const res = await fetch(`https://api.arasaac.org/v1/pictograms/it/search/${encodeURIComponent(cleanWord)}`, {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data) && data.length > 0) {
+                        arasaacApiCache.set(cleanWord, data);
+                        return data;
+                    }
+                }
+            } catch (err) {
+                console.warn(`ARASAAC API notice for word "${word}":`, err.message || err);
+            }
+
+            return [];
+        }
+
+        /**
+         * Generates static ARASAAC image URL from pictogram ID
+         */
+        function buildArasaacImgUrl(id) {
+            return id ? `https://static.arasaac.org/pictograms/${id}/${id}_500.png` : null;
+        }
+
+        /**
+         * Primary Handler triggered when clicking "GENERA MAPPA CONCETTUALE"
+         */
+        async function handleGenerateClick() {
+            showLoading(true);
+
+            try {
+                const centralText = document.getElementById('input-central').value.trim() || 'CENTRO';
+                const rawPeripherals = document.getElementById('input-peripheral').value
+                    .split('\n')
+                    .map(s => s.trim())
+                    .filter(s => s.length > 0);
+
+                state.centralConcept = centralText;
+                state.peripheralConcepts = rawPeripherals;
+
+                // Calculate stage coordinates
+                const stage = document.getElementById('stage-viewport');
+                const stageWidth = stage.clientWidth || window.innerWidth || 1000;
+                const stageHeight = stage.clientHeight || window.innerHeight || 700;
+
+                const centerX = stageWidth / 2;
+                const centerY = stageHeight / 2;
+
+                // Fetch pictograms in parallel using Promise.allSettled for maximum resilience
+                const allWords = [centralText, ...rawPeripherals];
+                const apiResults = await Promise.allSettled(allWords.map(w => fetchArasaacPictograms(w)));
+
+                // Build Central Node
+                const centerRes = apiResults[0];
+                const centerArasaacId = (centerRes.status === 'fulfilled' && centerRes.value.length > 0) 
+                    ? centerRes.value[0]._id 
+                    : null;
+
+                const newNodes = [{
+                    id: 'center',
+                    text: centralText.toUpperCase(),
+                    arasaacId: centerArasaacId,
+                    customImgUrl: null,
+                    x: centerX,
+                    y: centerY,
+                    isCenter: true
+                }];
+
+                // Build Peripheral Nodes in circle layout
+                const total = rawPeripherals.length;
+                const radius = state.radius;
+
+                for (let i = 0; i < total; i++) {
+                    const word = rawPeripherals[i];
+                    const angle = (i * (2 * Math.PI / total)) - (Math.PI / 2); // Start at top (12 o'clock)
+                    
+                    const x = centerX + radius * Math.cos(angle);
+                    const y = centerY + radius * Math.sin(angle);
+
+                    const pRes = apiResults[i + 1];
+                    const arasaacId = (pRes && pRes.status === 'fulfilled' && pRes.value.length > 0) 
+                        ? pRes.value[0]._id 
+                        : null;
+
+                    newNodes.push({
+                        id: `node_${i}_${Date.now()}`,
+                        text: word.toUpperCase(),
+                        arasaacId: arasaacId,
+                        customImgUrl: null,
+                        x: x,
+                        y: y,
+                        isCenter: false
+                    });
+                }
+
+                state.nodes = newNodes;
+                renderMindmapStage();
+
+            } catch (err) {
+                console.error("Error generating map:", err);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        /**
+         * Renders all DOM Nodes and connecting SVG lines
+         */
+        function renderMindmapStage() {
+            const nodesLayer = document.getElementById('nodes-layer');
+            const svgLines = document.getElementById('svg-lines');
+
+            nodesLayer.innerHTML = '';
+
+            // Retain SVG defs
+            const defs = svgLines.querySelector('defs').outerHTML;
+            svgLines.innerHTML = defs;
+
+            const centerNode = state.nodes.find(n => n.isCenter);
+
+            state.nodes.forEach(node => {
+                // Render Node Card DOM
+                const nodeDom = createNodeCardElement(node);
+                nodesLayer.appendChild(nodeDom);
+
+                // Draw Connecting Line if peripheral node
+                if (!node.isCenter && centerNode) {
+                    createSvgLine(centerNode, node);
+                }
+            });
+
+            updateLineStyles();
+        }
+
+        /**
+         * Constructs individual CAA Node DOM element
+         */
+        function createNodeCardElement(node) {
+            const el = document.createElement('div');
+            el.id = `dom_${node.id}`;
+            el.className = `caa-node absolute flex flex-col items-center justify-center rounded-2xl border-4 shadow-md bg-white select-none ${node.isCenter ? 'ring-4 ring-amber-300/80 z-20' : 'z-10'}`;
+
+            const config = SIZE_CONFIGS[state.nodeSize];
+            const bgColor = node.isCenter ? state.centerBg : state.nodeBg;
+            const borderColor = node.isCenter ? '#d97706' : '#1e293b';
+
+            el.style.backgroundColor = bgColor;
+            el.style.borderColor = borderColor;
+            el.style.padding = config.boxPadding;
+            el.style.left = `${node.x}px`;
+            el.style.top = `${node.y}px`;
+            el.style.transform = 'translate(-50%, -50%)';
+
+            const imgUrl = node.customImgUrl || buildArasaacImgUrl(node.arasaacId);
+
+            let imageHtml = '';
+            if (imgUrl) {
+                imageHtml = `<img src="${imgUrl}" alt="${node.text}" 
+                    style="width: ${config.imgSize}px; height: ${config.imgSize}px; object-fit: contain;" 
+                    class="pointer-events-none drop-shadow-sm transition-transform"
+                    onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'w-16 h-16 flex items-center justify-center text-slate-300\'><i class=\'fa-solid fa-image text-3xl\'></i></div>';">`;
+            } else {
+                imageHtml = `<div style="width: ${config.imgSize}px; height: ${config.imgSize}px;" class="flex flex-col items-center justify-center bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-400">
+                    <i class="fa-solid fa-icons text-2xl mb-1 text-slate-300"></i>
+                    <span class="text-[9px] font-bold">NO SIMBOLO</span>
+                </div>`;
+            }
+
+            el.innerHTML = `
+                <div class="relative group flex flex-col items-center">
+                    ${imageHtml}
+                    <span class="font-display font-extrabold uppercase tracking-wide text-center mt-2 text-slate-900 leading-tight" 
+                          style="font-size: ${state.textSize}px; max-width: ${config.imgSize + 50}px;">
+                        ${node.text}
+                    </span>
+
+                    <!-- Hover Quick Edit Icon -->
+                    <button onclick="event.stopPropagation(); openPictogramModal('${node.id}')" title="Cambia pittogramma" class="no-print absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 rounded-full bg-sky-600 hover:bg-sky-700 text-white flex items-center justify-center shadow-md text-xs">
+                        <i class="fa-solid fa-pencil"></i>
+                    </button>
+                </div>
+            `;
+
+            // Attach Touch/Mouse Drag Event Listeners
+            attachDragListeners(el, node.id);
+
+            // Click Handler for Modal
+            el.addEventListener('click', () => {
+                if (!el.isDragging) {
+                    openPictogramModal(node.id);
+                }
+            });
+
+            return el;
+        }
+
+        /**
+         * Draws SVG connecting line between center and child node
+         */
+        function createSvgLine(centerNode, childNode) {
+            const svg = document.getElementById('svg-lines');
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+
+            line.id = `line_${childNode.id}`;
+            line.setAttribute('x1', centerNode.x);
+            line.setAttribute('y1', centerNode.y);
+            line.setAttribute('x2', childNode.x);
+            line.setAttribute('y2', childNode.y);
+            line.setAttribute('stroke', state.lineColor);
+            line.setAttribute('stroke-width', state.lineWidth);
+            line.setAttribute('stroke-linecap', 'round');
+
+            svg.appendChild(line);
+        }
+
+        /**
+         * Attaches robust Drag & Drop listeners (Mouse + Touch) to a node
+         */
+        function attachDragListeners(element, nodeId) {
+            let startX = 0, startY = 0;
+            let initialNodeX = 0, initialNodeY = 0;
+
+            function onPointerDown(e) {
+                element.isDragging = false;
+                startX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+                startY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+
+                const node = state.nodes.find(n => n.id === nodeId);
+                if (!node) return;
+
+                initialNodeX = node.x;
+                initialNodeY = node.y;
+
+                window.addEventListener('pointermove', onPointerMove);
+                window.addEventListener('pointerup', onPointerUp);
+            }
+
+            function onPointerMove(e) {
+                const currentX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+                const currentY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+
+                const dx = (currentX - startX) / state.zoom;
+                const dy = (currentY - startY) / state.zoom;
+
+                if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+                    element.isDragging = true;
+                }
+
+                const node = state.nodes.find(n => n.id === nodeId);
+                if (!node) return;
+
+                node.x = initialNodeX + dx;
+                node.y = initialNodeY + dy;
+
+                // Update Node Position in DOM
+                element.style.left = `${node.x}px`;
+                element.style.top = `${node.y}px`;
+
+                // Recalculate connected SVG Lines
+                updateNodeLinePositions(node);
+            }
+
+            function onPointerUp() {
+                window.removeEventListener('pointermove', onPointerMove);
+                window.removeEventListener('pointerup', onPointerUp);
+                setTimeout(() => { element.isDragging = false; }, 50);
+            }
+
+            element.addEventListener('pointerdown', onPointerDown);
+        }
+
+        /**
+         * Recalculates SVG line coordinates during dragging
+         */
+        function updateNodeLinePositions(movedNode) {
+            const centerNode = state.nodes.find(n => n.isCenter);
+
+            if (movedNode.isCenter) {
+                // Update lines for all peripheral nodes
+                state.nodes.forEach(n => {
+                    if (!n.isCenter) {
+                        const line = document.getElementById(`line_${n.id}`);
+                        if (line) {
+                            line.setAttribute('x1', movedNode.x);
+                            line.setAttribute('y1', movedNode.y);
+                        }
+                    }
+                });
+            } else {
+                // Update line for this specific node
+                const line = document.getElementById(`line_${movedNode.id}`);
+                if (line && centerNode) {
+                    line.setAttribute('x2', movedNode.x);
+                    line.setAttribute('y2', movedNode.y);
+                }
+            }
+        }
+
+        async function openPictogramModal(nodeId) {
+            state.activeModalNodeId = nodeId;
+            const node = state.nodes.find(n => n.id === nodeId);
+            if (!node) return;
+
+            document.getElementById('modal-node-title').innerText = node.text;
+            document.getElementById('modal-search-input').value = node.text;
+            document.getElementById('modal-pictogram').classList.remove('hidden');
+
+            await executeModalSearch(node.text);
+        }
+
+        function closePictogramModal() {
+            document.getElementById('modal-pictogram').classList.add('hidden');
+            state.activeModalNodeId = null;
+        }
+
+        async function handleModalSearchSubmit(e) {
+            e.preventDefault();
+            const query = document.getElementById('modal-search-input').value.trim();
+            if (query) {
+                await executeModalSearch(query);
+            }
+        }
+
+        async function executeModalSearch(query) {
+            const grid = document.getElementById('modal-results-grid');
+            grid.innerHTML = `
+                <div class="col-span-full py-12 text-center text-slate-500">
+                    <i class="fa-solid fa-spinner fa-spin text-3xl text-sky-600 mb-2"></i>
+                    <p class="text-xs font-bold">Ricerca in ARASAAC...</p>
+                </div>
+            `;
+
+            const results = await fetchArasaacPictograms(query);
+
+            if (results.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full py-10 text-center text-slate-500">
+                        <i class="fa-solid fa-triangle-exclamation text-3xl mb-2 text-amber-500"></i>
+                        <p class="text-xs font-bold">Nessun pittogramma trovato per "${query}".</p>
+                        <p class="text-[11px] text-slate-400 mt-1">Prova con una parola più generica.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = '';
+            results.slice(0, 20).forEach(item => {
+                const imgUrl = buildArasaacImgUrl(item._id);
+                const btn = document.createElement('button');
+                btn.className = "p-2 border-2 border-slate-200 hover:border-sky-500 rounded-xl flex flex-col items-center justify-center bg-white hover:bg-sky-50 transition group";
+                btn.onclick = () => selectModalPictogram(item._id);
+
+                btn.innerHTML = `
+                    <img src="${imgUrl}" alt="ARASAAC ${item._id}" class="w-16 h-16 object-contain mb-1 group-hover:scale-105 transition-transform">
+                    <span class="text-[10px] text-slate-400 font-mono">#${item._id}</span>
+                `;
+                grid.appendChild(btn);
+            });
+        }
+
+        function selectModalPictogram(arasaacId) {
+            if (!state.activeModalNodeId) return;
+            const node = state.nodes.find(n => n.id === state.activeModalNodeId);
+            if (node) {
+                node.arasaacId = arasaacId;
+                node.customImgUrl = null;
+                renderMindmapStage();
+            }
+            closePictogramModal();
+        }
+
+        function clearNodeImage() {
+            if (!state.activeModalNodeId) return;
+            const node = state.nodes.find(n => n.id === state.activeModalNodeId);
+            if (node) {
+                node.arasaacId = null;
+                node.customImgUrl = 'none';
+                renderMindmapStage();
+            }
+            closePictogramModal();
+        }
+
+        function updateLineStyles() {
+            state.lineWidth = document.getElementById('range-line-width').value;
+            state.lineColor = document.getElementById('picker-line-color').value;
+            state.lineDash = document.getElementById('select-line-dash').value;
+
+            const lines = document.querySelectorAll('#svg-lines line');
+            lines.forEach(line => {
+                line.setAttribute('stroke', state.lineColor);
+                line.setAttribute('stroke-width', state.lineWidth);
+
+                if (state.lineDash === 'dashed') {
+                    line.setAttribute('stroke-dasharray', '8,8');
+                } else if (state.lineDash === 'dotted') {
+                    line.setAttribute('stroke-dasharray', '3,5');
+                } else {
+                    line.removeAttribute('stroke-dasharray');
+                }
+            });
+
+            const arrow = document.querySelector('#arrow path');
+            if (arrow) arrow.setAttribute('fill', state.lineColor);
+        }
+
+        function setNodeSize(size) {
+            state.nodeSize = size;
+            ['sm', 'md', 'lg'].forEach(s => {
+                const btn = document.getElementById(`btn-size-${s}`);
+                if (s === size) {
+                    btn.className = "btn-size py-2 border border-sky-500 bg-sky-50 text-sky-700 rounded-xl text-xs font-bold text-center";
+                } else {
+                    btn.className = "btn-size py-2 border rounded-xl text-xs font-bold hover:bg-slate-100 text-slate-700 text-center";
+                }
+            });
+            renderMindmapStage();
+        }
+
+        function updateTextSize(val) {
+            state.textSize = parseInt(val);
+            document.getElementById('text-size-label').innerText = `${val}px`;
+            renderMindmapStage();
+        }
+
+        function updateRadius(val) {
+            state.radius = parseInt(val);
+            document.getElementById('radius-label').innerText = `${val}px`;
+            repositionNodesRadially();
+        }
+
+        function repositionNodesRadially() {
+            const centerNode = state.nodes.find(n => n.isCenter);
+            if (!centerNode) return;
+
+            const peripherals = state.nodes.filter(n => !n.isCenter);
+            const total = peripherals.length;
+            const radius = state.radius;
+
+            peripherals.forEach((node, i) => {
+                const angle = (i * (2 * Math.PI / total)) - (Math.PI / 2);
+                node.x = centerNode.x + radius * Math.cos(angle);
+                node.y = centerNode.y + radius * Math.sin(angle);
+            });
+
+            renderMindmapStage();
+        }
+
+        function updateNodeColors() {
+            state.centerBg = document.getElementById('picker-center-bg').value;
+            state.nodeBg = document.getElementById('picker-node-bg').value;
+            renderMindmapStage();
+        }
+
+        function setCanvasBackground(pattern) {
+            const wrapper = document.getElementById('workspace-wrapper');
+            wrapper.classList.remove('bg-pattern-dots', 'bg-pattern-grid', 'bg-pattern-blank');
+            wrapper.classList.add(`bg-pattern-${pattern}`);
+        }
+
+        function zoomCanvas(delta) {
+            state.zoom = Math.min(Math.max(0.5, state.zoom + delta), 2.0);
+            document.getElementById('canvas-stage').style.transform = `scale(${state.zoom})`;
+        }
+
+        function resetZoomAndCenter() {
+            state.zoom = 1.0;
+            document.getElementById('canvas-stage').style.transform = 'scale(1.0)';
+        }
+
+        function loadPresetAutumn() {
+            document.getElementById('input-central').value = "autunno";
+            document.getElementById('input-peripheral').value = "foglia\ncastagna\npioggia\nombrello\nfungo\nuva\nvento\nscoiattolo";
+            handleGenerateClick();
+        }
+
+        function switchSidebarTab(tab) {
+            const contentTab = document.getElementById('tab-content');
+            const styleTab = document.getElementById('tab-style');
+            const btnContent = document.getElementById('tab-btn-content');
+            const btnStyle = document.getElementById('tab-btn-style');
+
+            if (tab === 'content') {
+                contentTab.classList.remove('hidden');
+                styleTab.classList.add('hidden');
+                btnContent.className = "flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider text-sky-600 border-b-2 border-sky-600 flex items-center justify-center gap-2 transition";
+                btnStyle.className = "flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider text-slate-500 border-b-2 border-transparent hover:text-slate-700 flex items-center justify-center gap-2 transition";
+            } else {
+                contentTab.classList.add('hidden');
+                styleTab.classList.remove('hidden');
+                btnStyle.className = "flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider text-sky-600 border-b-2 border-sky-600 flex items-center justify-center gap-2 transition";
+                btnContent.className = "flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider text-slate-500 border-b-2 border-transparent hover:text-slate-700 flex items-center justify-center gap-2 transition";
+            }
+        }
+
+        function toggleWorksheetHeader() {
+            const checked = document.getElementById('check-worksheet-header').checked;
+            const header = document.getElementById('worksheet-header');
+            header.classList.toggle('hidden', !checked);
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading-overlay').classList.toggle('hidden', !show);
+        }
+
+        function triggerPrint() {
+            window.print();
+        }
+
+        async function exportToPNG() {
+            showLoading(true);
+            try {
+                const stage = document.getElementById('stage-viewport');
+                const canvas = await html2canvas(stage, {
+                    backgroundColor: '#ffffff',
+                    useCORS: true,
+                    scale: 2
+                });
+
+                const link = document.createElement('a');
+                link.download = `Mappa_CAA_${state.centralConcept.toUpperCase()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch (err) {
+                console.error("Export PNG failed:", err);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            handleGenerateClick();
+        });
+    </script>
+</body>
+</html>
