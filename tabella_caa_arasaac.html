@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generatore Tabelle Comunicazione CAA - ARASAAC</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Open+Sans:wght@600;700&display=swap" rel="stylesheet">
+    <!-- html2pdf.js per esportazione PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        caa: ['Open Sans', 'sans-serif']
+                    },
+                    colors: {
+                        caa: {
+                            yellow: '#fef3c7',
+                            green: '#dcfce7',
+                            blue: '#dbeafe',
+                            pink: '#fce7f3',
+                            orange: '#ffedd5',
+                            purple: '#f3e8ff'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* STILI DI STAMPA CRUCIALI */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 12mm;
+            }
+            body {
+                background: white !important;
+                color: black !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .print-wrapper {
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+                max-width: none !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+            #caa-grid {
+                gap: 8px !important;
+                width: 100% !important;
+            }
+            .caa-card {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                box-shadow: none !important;
+                border: 2px solid #1e293b !important;
+                background-color: white !important;
+            }
+            .caa-card-missing {
+                border: 2px dashed #dc2626 !important;
+                background-color: #fef2f2 !important;
+            }
+        }
+
+        .print-only {
+            display: none;
+        }
+    </style>
+</head>
+<body class="h-full text-slate-800 flex flex-col font-sans antialiased">
+
+    <!-- Top Header Navigation -->
+    <header class="no-print bg-slate-900 text-white border-b border-slate-800 shadow-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-white shadow-lg font-bold text-xl">
+                    <i class="fa-solid fa-shapes"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                        Tabella CAA ARASAAC
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30">Italiano</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Comunicazione Aumentativa Alternativa facile e immediata</p>
+                </div>
+            </div>
+
+            <!-- Action buttons in header -->
+            <div class="flex items-center gap-2">
+                <button onclick="clearAll()" class="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors flex items-center gap-1.5 border border-slate-700">
+                    <i class="fa-solid fa-trash-can"></i> Svuota
+                </button>
+                <button id="btn-pdf" onclick="downloadPDF()" class="px-4 py-2 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-500 active:bg-teal-700 rounded-lg shadow-md transition-all flex items-center gap-2 border border-teal-500">
+                    <i class="fa-solid fa-file-pdf"></i> Scarica PDF
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex-1 flex flex-col md:flex-row overflow-hidden max-w-7xl w-full mx-auto p-4 gap-6">
+
+        <!-- Left Sidebar: Controls & Input -->
+        <aside class="no-print w-full md:w-80 lg:w-96 flex flex-col gap-4 flex-shrink-0">
+            
+            <!-- Input Card -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                    <label for="words-input" class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                        <i class="fa-solid fa-list-ul text-teal-600"></i> Lista Parole (1 per riga)
+                    </label>
+                    <span id="word-count" class="text-xs font-medium text-slate-400">0 parole</span>
+                </div>
+
+                <textarea id="words-input" rows="8" 
+                    placeholder="Incolla o scrivi qui le parole, una per riga:&#10;&#10;Voglio&#10;Bere&#10;Acqua&#10;Mela&#10;Casa&#10;Giocare" 
+                    class="w-full p-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all font-sans resize-y focus:bg-white"></textarea>
+
+                <button id="btn-generate" onclick="processWordsInput()" 
+                    class="w-full py-2.5 px-4 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Genera Pittogrammi
+                </button>
+
+                <!-- Preset Quick Buttons -->
+                <div class="pt-2 border-t border-slate-100">
+                    <span class="text-xs font-semibold text-slate-400 block mb-2">Carica esempi rapidi:</span>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button onclick="loadPreset('bisogni')" class="px-2.5 py-1 text-xs font-medium bg-slate-100 hover:bg-teal-50 text-slate-700 hover:text-teal-700 rounded-lg border border-slate-200 transition-colors">💧 Bisogni</button>
+                        <button onclick="loadPreset('cibo')" class="px-2.5 py-1 text-xs font-medium bg-slate-100 hover:bg-teal-50 text-slate-700 hover:text-teal-700 rounded-lg border border-slate-200 transition-colors">🍎 Cibo</button>
+                        <button onclick="loadPreset('emozioni')" class="px-2.5 py-1 text-xs font-medium bg-slate-100 hover:bg-teal-50 text-slate-700 hover:text-teal-700 rounded-lg border border-slate-200 transition-colors">😊 Emozioni</button>
+                        <button onclick="loadPreset('scuola')" class="px-2.5 py-1 text-xs font-medium bg-slate-100 hover:bg-teal-50 text-slate-700 hover:text-teal-700 rounded-lg border border-slate-200 transition-colors">✏️ Scuola</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customization Settings Box -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col gap-4">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-teal-600"></i> Personalizzazione Griglia
+                </h3>
+
+                <!-- Column Count Selector -->
+                <div class="flex items-center justify-between">
+                    <label class="text-xs font-semibold text-slate-700">Colonne per riga:</label>
+                    <div class="flex items-center bg-slate-100 rounded-lg p-1 border border-slate-200">
+                        <button onclick="setColumns(2)" id="btn-col-2" class="px-2.5 py-1 text-xs font-bold rounded-md transition-all text-slate-600 hover:text-slate-900">2</button>
+                        <button onclick="setColumns(3)" id="btn-col-3" class="px-2.5 py-1 text-xs font-bold rounded-md transition-all text-slate-600 hover:text-slate-900">3</button>
+                        <button onclick="setColumns(4)" id="btn-col-4" class="px-2.5 py-1 text-xs font-bold rounded-md transition-all bg-white text-teal-700 shadow-sm">4</button>
+                        <button onclick="setColumns(5)" id="btn-col-5" class="px-2.5 py-1 text-xs font-bold rounded-md transition-all text-slate-600 hover:text-slate-900">5</button>
+                        <button onclick="setColumns(6)" id="btn-col-6" class="px-2.5 py-1 text-xs font-bold rounded-md transition-all text-slate-600 hover:text-slate-900">6</button>
+                    </div>
+                </div>
+
+                <!-- Text Case Toggle -->
+                <div class="flex items-center justify-between">
+                    <label class="text-xs font-semibold text-slate-700">Formato Testo:</label>
+                    <div class="flex items-center bg-slate-100 rounded-lg p-1 border border-slate-200">
+                        <button onclick="setTextCase('uppercase')" id="btn-case-up" class="px-3 py-1 text-xs font-bold rounded-md transition-all bg-white text-teal-700 shadow-sm">MAIUSCOLO</button>
+                        <button onclick="setTextCase('lowercase')" id="btn-case-low" class="px-3 py-1 text-xs font-bold rounded-md transition-all text-slate-600 hover:text-slate-900">minuscolo</button>
+                    </div>
+                </div>
+
+                <!-- Font Size -->
+                <div class="flex items-center justify-between">
+                    <label class="text-xs font-semibold text-slate-700">Dimensione Scritta:</label>
+                    <select id="select-font-size" onchange="setFontSize(this.value)" class="text-xs font-semibold bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:ring-2 focus:ring-teal-500">
+                        <option value="text-xs">Piccola</option>
+                        <option value="text-sm">Media</option>
+                        <option value="text-base" selected>Normale</option>
+                        <option value="text-lg">Grande</option>
+                        <option value="text-xl">Molto Grande</option>
+                    </select>
+                </div>
+
+                <!-- Board Title Edit -->
+                <div class="flex flex-col gap-1">
+                    <label for="board-title-input" class="text-xs font-semibold text-slate-700">Titolo della Tabella (opzionale):</label>
+                    <input type="text" id="board-title-input" oninput="updateBoardTitle(this.value)" placeholder="Es: Tabella della Colazione" class="px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500">
+                </div>
+            </div>
+
+            <!-- API Credit Footer -->
+            <div class="bg-slate-100 rounded-xl p-3 border border-slate-200 text-center text-xs text-slate-500">
+                <p class="flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-heart text-red-500"></i> Simboli pittografici forniti da
+                </p>
+                <a href="https://arasaac.org" target="_blank" rel="noopener noreferrer" class="font-bold text-teal-700 hover:underline">ARASAAC (Gobierno de Aragón)</a>
+            </div>
+        </aside>
+
+        <!-- Right Main Content: Board Preview & Grid (Printable Area) -->
+        <main class="flex-1 flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden print-wrapper">
+            
+            <!-- Toolbar for Preview Area -->
+            <div class="no-print bg-slate-50 border-b border-slate-200 px-6 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    <h2 class="text-sm font-bold text-slate-700">Anteprima Tabella CAA</h2>
+                </div>
+                <div class="text-xs text-slate-500 flex items-center gap-3">
+                    <span><i class="fa-solid fa-arrows-spin text-teal-600"></i> Puoi modificare il testo delle caselle direttamente</span>
+                </div>
+            </div>
+
+            <!-- Printable Board Container -->
+            <div id="print-container" class="p-6 md:p-8 flex-1 overflow-y-auto bg-white">
+                
+                <!-- Board Title Header (shown on page and print) -->
+                <div id="board-header" class="mb-6 text-center hidden">
+                    <h2 id="display-board-title" class="text-2xl font-black text-slate-900 tracking-tight font-caa"></h2>
+                    <div class="w-16 h-1 bg-teal-500 mx-auto mt-2 rounded-full no-print"></div>
+                </div>
+
+                <!-- Empty State Message -->
+                <div id="empty-state" class="py-16 px-4 text-center flex flex-col items-center justify-center text-slate-400">
+                    <div class="w-20 h-20 mb-4 rounded-full bg-teal-50 flex items-center justify-center text-teal-500 text-3xl">
+                        <i class="fa-solid fa-table-cells"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-700 mb-1">Nessuna parola inserita</h3>
+                    <p class="text-sm max-w-md mx-auto text-slate-500 mb-4">
+                        Scrivi o incolla una lista di parole nel riquadro a sinistra e clicca su <strong>"Genera Pittogrammi"</strong> per iniziare.
+                    </p>
+                    <button onclick="loadPreset('bisogni')" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-medium text-xs rounded-xl shadow-sm transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-lightbulb"></i> Prova con un esempio
+                    </button>
+                </div>
+
+                <!-- AAC GRID CONTAINER -->
+                <!-- Defaults to 4 columns (grid-cols-4) -->
+                <div id="caa-grid" class="grid grid-cols-4 gap-4 w-full"></div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for Alternate Pictograms -->
+    <div id="alt-modal" class="no-print fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden border border-slate-200">
+            <div class="p-4 bg-slate-900 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-images text-teal-400"></i>
+                    <h3 class="font-bold text-sm">Scegli Pittogramma per "<span id="modal-word-title" class="text-teal-300"></span>"</h3>
+                </div>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-lg hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="p-4 overflow-y-auto flex-1">
+                <p class="text-xs text-slate-500 mb-3">Clicca su un pittogramma alternativo per sostituirlo nella casella:</p>
+                <div id="modal-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                    <!-- Dynamic modal items -->
+                </div>
+            </div>
+
+            <div class="p-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+                <button onclick="closeModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-colors">
+                    Chiudi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State variables
+        let cardsData = [];
+        let currentColumns = 4;
+        let currentTextCase = 'uppercase';
+        let currentFontSize = 'text-base';
+        let activeCardIndexForModal = null;
+
+        // Presets for quick testing
+        const presets = {
+            bisogni: ['Voglio', 'Bere', 'Acqua', 'Mangiare', 'Pane', 'Bagno', 'Dormire', 'Aiuto'],
+            cibo: ['Mela', 'Pizza', 'Pasta', 'Latte', 'Biscotto', 'Gelato', 'Carne', 'Acqua'],
+            emozioni: ['Felice', 'Triste', 'Arrabbiato', 'Stanco', 'Paura', 'Calmo', 'Bene', 'Male'],
+            scuola: ['Maestra', 'Matita', 'Libro', 'Disegnare', 'Cartella', 'Sedia', 'Tavolo', 'Amico']
+        };
+
+        // Cache for ARASAAC search results to minimize requests
+        const apiCache = new Map();
+
+        // Initialize listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            const textarea = document.getElementById('words-input');
+            textarea.addEventListener('input', updateWordCount);
+            
+            // Auto-load example on first start
+            loadPreset('bisogni');
+        });
+
+        function updateWordCount() {
+            const textarea = document.getElementById('words-input');
+            const lines = textarea.value.split('\n').filter(line => line.trim() !== '');
+            document.getElementById('word-count').textContent = `${lines.length} parole`;
+        }
+
+        function loadPreset(key) {
+            if (presets[key]) {
+                const textarea = document.getElementById('words-input');
+                textarea.value = presets[key].join('\n');
+                updateWordCount();
+                processWordsInput();
+            }
+        }
+
+        function updateBoardTitle(title) {
+            const header = document.getElementById('board-header');
+            const display = document.getElementById('display-board-title');
+            if (title.trim() !== '') {
+                display.textContent = title;
+                header.classList.remove('hidden');
+            } else {
+                header.classList.add('hidden');
+            }
+        }
+
+        // Process textarea lines and fetch images from ARASAAC
+        async function processWordsInput() {
+            const textarea = document.getElementById('words-input');
+            const lines = textarea.value
+                .split('\n')
+                .map(l => l.trim())
+                .filter(l => l.length > 0);
+
+            const emptyState = document.getElementById('empty-state');
+            const grid = document.getElementById('caa-grid');
+
+            if (lines.length === 0) {
+                cardsData = [];
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            
+            // Show loading state on button
+            const btn = document.getElementById('btn-generate');
+            const originalBtnText = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Ricerca in corso...`;
+            btn.disabled = true;
+
+            // Prepare cards array
+            cardsData = lines.map((word, idx) => ({
+                id: idx,
+                originalWord: word,
+                displayWord: word,
+                picId: null,
+                picUrl: null,
+                status: 'loading',
+                alternates: []
+            }));
+
+            // Initial render with loading skeletons
+            renderGrid();
+
+            // Fetch pictograms concurrently or with cache
+            const fetchPromises = cardsData.map(async (card) => {
+                const searchWord = card.originalWord.toLowerCase().trim();
+                
+                try {
+                    let results;
+                    if (apiCache.has(searchWord)) {
+                        results = apiCache.get(searchWord);
+                    } else {
+                        // ARASAAC API search endpoint for Italian
+                        const response = await fetch(`https://api.arasaac.org/v1/pictograms/it/search/${encodeURIComponent(searchWord)}`);
+                        if (!response.ok) {
+                            throw new Error('Errore risposta API');
+                        }
+                        results = await response.json();
+                        apiCache.set(searchWord, results);
+                    }
+
+                    if (Array.isArray(results) && results.length > 0) {
+                        // Success: first result ID according to prompt rules
+                        // https://static.arasaac.org/pictograms/ID/ID_500.png
+                        const firstPic = results[0];
+                        card.picId = firstPic._id;
+                        card.picUrl = `https://static.arasaac.org/pictograms/${firstPic._id}/${firstPic._id}_500.png`;
+                        card.status = 'found';
+                        card.alternates = results;
+                    } else {
+                        // No pictogram found
+                        card.status = 'not_found';
+                    }
+                } catch (err) {
+                    console.warn(`Errore durante la ricerca per "${card.originalWord}":`, err);
+                    card.status = 'not_found';
+                }
+            });
+
+            await Promise.all(fetchPromises);
+
+            // Restore button
+            btn.innerHTML = originalBtnText;
+            btn.disabled = false;
+
+            // Re-render completed grid
+            renderGrid();
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('caa-grid');
+            grid.innerHTML = '';
+
+            cardsData.forEach((card, index) => {
+                const cardEl = document.createElement('div');
+                
+                // Formatted display text according to uppercase/lowercase toggle
+                const textToShow = currentTextCase === 'uppercase' 
+                    ? card.displayWord.toUpperCase() 
+                    : card.displayWord.toLowerCase();
+
+                if (card.status === 'loading') {
+                    // Loading State Card
+                    cardEl.className = 'caa-card relative border-2 border-slate-200 rounded-xl p-3 flex flex-col items-center justify-between bg-white aspect-square animate-pulse';
+                    cardEl.innerHTML = `
+                        <div class="w-full flex-1 bg-slate-100 rounded-lg flex items-center justify-center mb-2">
+                            <i class="fa-solid fa-spinner animate-spin text-teal-500 text-xl"></i>
+                        </div>
+                        <div class="h-4 bg-slate-200 rounded w-3/4"></div>
+                    `;
+                } else if (card.status === 'not_found') {
+                    // MISSING PICTOGRAM STATE (Requirement: Casella vuota con scritta in rosso)
+                    cardEl.className = 'caa-card caa-card-missing relative border-2 border-red-400 bg-red-50/50 rounded-xl p-3 flex flex-col items-center justify-between aspect-square transition-all group hover:border-red-500';
+                    cardEl.innerHTML = `
+                        <!-- Action buttons overlay -->
+                        <div class="no-print absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
+                            <button onclick="removeCard(${index})" title="Rimuovi" class="w-6 h-6 rounded-md bg-white border border-slate-200 text-red-600 hover:bg-red-50 flex items-center justify-center shadow-sm text-xs">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+
+                        <!-- Empty image placeholder box -->
+                        <div class="w-full flex-1 border border-dashed border-red-200 rounded-lg flex flex-col items-center justify-center p-2 mb-2 bg-white/60">
+                            <i class="fa-solid fa-image-slash text-red-300 text-2xl mb-1"></i>
+                            <span class="text-[10px] text-red-400 font-semibold text-center leading-tight no-print">
+                                Pictogramma non trovato
+                            </span>
+                        </div>
+
+                        <!-- Label in Red (Mandatory Requirement) -->
+                        <div class="w-full text-center">
+                            <input type="text" 
+                                value="${textToShow}" 
+                                onchange="updateCardLabel(${index}, this.value)"
+                                class="w-full text-center font-bold font-caa text-red-600 bg-transparent border-b border-transparent hover:border-red-300 focus:border-red-500 focus:bg-white focus:outline-none rounded px-1 transition-all ${currentFontSize}" 
+                                title="Fai clic per modificare il testo" />
+                        </div>
+                    `;
+                } else {
+                    // FOUND PICTOGRAM STATE
+                    const hasAlternates = card.alternates && card.alternates.length > 1;
+
+                    cardEl.className = 'caa-card relative border-2 border-slate-800 bg-white rounded-xl p-3 flex flex-col items-center justify-between aspect-square transition-all group hover:border-teal-600 hover:shadow-md';
+                    cardEl.innerHTML = `
+                        <!-- Hover Action Bar (Hidden on print) -->
+                        <div class="no-print absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
+                            ${hasAlternates ? `
+                                <button onclick="openModal(${index})" title="Cambia versione pittogramma (${card.alternates.length} disponibili)" class="px-1.5 h-6 rounded-md bg-teal-600 text-white hover:bg-teal-700 flex items-center gap-1 shadow-sm text-[10px] font-bold">
+                                    <i class="fa-solid fa-rotate"></i> ${card.alternates.length}
+                                </button>
+                            ` : ''}
+                            <button onclick="removeCard(${index})" title="Rimuovi casella" class="w-6 h-6 rounded-md bg-white border border-slate-200 text-slate-600 hover:text-red-600 hover:bg-red-50 flex items-center justify-center shadow-sm text-xs">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+
+                        <!-- ARASAAC Image (URL: static.arasaac.org/pictograms/ID/ID_500.png) -->
+                        <div class="w-full flex-1 flex items-center justify-center p-1 mb-2 overflow-hidden">
+                            <img src="${card.picUrl}" 
+                                 alt="${card.displayWord}" 
+                                 crossorigin="anonymous"
+                                 loading="lazy" 
+                                 onerror="handleImageError(${index})"
+                                 class="max-h-full max-w-full object-contain filter drop-shadow-sm transition-transform group-hover:scale-105" />
+                        </div>
+
+                        <!-- Label written below image -->
+                        <div class="w-full text-center border-t border-slate-100 pt-1.5">
+                            <input type="text" 
+                                value="${textToShow}" 
+                                onchange="updateCardLabel(${index}, this.value)"
+                                class="w-full text-center font-bold font-caa text-slate-900 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-teal-500 focus:bg-slate-50 focus:outline-none rounded px-1 transition-all ${currentFontSize}" 
+                                title="Fai clic per modificare la parola" />
+                        </div>
+                    `;
+                }
+
+                grid.appendChild(cardEl);
+            });
+        }
+
+        function handleImageError(index) {
+            if (cardsData[index]) {
+                cardsData[index].status = 'not_found';
+                renderGrid();
+            }
+        }
+
+        function updateCardLabel(index, newValue) {
+            if (cardsData[index]) {
+                cardsData[index].displayWord = newValue;
+            }
+        }
+
+        function removeCard(index) {
+            cardsData.splice(index, 1);
+            renderGrid();
+        }
+
+        function clearAll() {
+            document.getElementById('words-input').value = '';
+            document.getElementById('board-title-input').value = '';
+            updateBoardTitle('');
+            updateWordCount();
+            cardsData = [];
+            renderGrid();
+            document.getElementById('empty-state').classList.remove('hidden');
+        }
+
+        // Grid Configuration Functions
+        function setColumns(cols) {
+            currentColumns = cols;
+            const grid = document.getElementById('caa-grid');
+            
+            // Remove previous grid column classes
+            grid.className = grid.className.replace(/grid-cols-\d+/g, '');
+            grid.classList.add(`grid-cols-${cols}`);
+
+            // Update UI buttons
+            [2, 3, 4, 5, 6].forEach(num => {
+                const btn = document.getElementById(`btn-col-${num}`);
+                if (btn) {
+                    if (num === cols) {
+                        btn.className = 'px-2.5 py-1 text-xs font-bold rounded-md transition-all bg-white text-teal-700 shadow-sm';
+                    } else {
+                        btn.className = 'px-2.5 py-1 text-xs font-bold rounded-md transition-all text-slate-600 hover:text-slate-900';
+                    }
+                }
+            });
+        }
+
+        function setTextCase(format) {
+            currentTextCase = format;
+            
+            const btnUp = document.getElementById('btn-case-up');
+            const btnLow = document.getElementById('btn-case-low');
+
+            if (format === 'uppercase') {
+                btnUp.className = 'px-3 py-1 text-xs font-bold rounded-md transition-all bg-white text-teal-700 shadow-sm';
+                btnLow.className = 'px-3 py-1 text-xs font-bold rounded-md transition-all text-slate-600 hover:text-slate-900';
+            } else {
+                btnLow.className = 'px-3 py-1 text-xs font-bold rounded-md transition-all bg-white text-teal-700 shadow-sm';
+                btnUp.className = 'px-3 py-1 text-xs font-bold rounded-md transition-all text-slate-600 hover:text-slate-900';
+            }
+
+            renderGrid();
+        }
+
+        function setFontSize(sizeClass) {
+            currentFontSize = sizeClass;
+            renderGrid();
+        }
+
+        function openModal(cardIndex) {
+            activeCardIndexForModal = cardIndex;
+            const card = cardsData[cardIndex];
+            if (!card || !card.alternates || card.alternates.length === 0) return;
+
+            document.getElementById('modal-word-title').textContent = card.displayWord;
+            const modalGrid = document.getElementById('modal-grid');
+            modalGrid.innerHTML = '';
+
+            card.alternates.forEach(pic => {
+                const imgUrl = `https://static.arasaac.org/pictograms/${pic._id}/${pic._id}_500.png`;
+                const isSelected = pic._id === card.picId;
+
+                const item = document.createElement('button');
+                item.className = `p-3 border-2 rounded-xl flex flex-col items-center justify-center bg-white transition-all hover:border-teal-500 hover:shadow-md ${isSelected ? 'border-teal-600 bg-teal-50/40 ring-2 ring-teal-500/20' : 'border-slate-200'}`;
+                item.onclick = () => selectAlternatePic(pic._id);
+
+                item.innerHTML = `
+                    <img src="${imgUrl}" alt="Pittogramma" class="w-20 h-20 object-contain mb-2" />
+                    <span class="text-[10px] text-slate-500 font-semibold">ID: ${pic._id}</span>
+                `;
+
+                modalGrid.appendChild(item);
+            });
+
+            document.getElementById('alt-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('alt-modal').classList.add('hidden');
+            activeCardIndexForModal = null;
+        }
+
+        function selectAlternatePic(picId) {
+            if (activeCardIndexForModal !== null && cardsData[activeCardIndexForModal]) {
+                cardsData[activeCardIndexForModal].picId = picId;
+                cardsData[activeCardIndexForModal].picUrl = `https://static.arasaac.org/pictograms/${picId}/${picId}_500.png`;
+                cardsData[activeCardIndexForModal].status = 'found';
+                renderGrid();
+                closeModal();
+            }
+        }
+
+        async function downloadPDF() {
+            const printElement = document.getElementById('print-container');
+            const emptyState = document.getElementById('empty-state');
+            
+            // Verifica se la tabella è vuota
+            if (cardsData.length === 0 || !emptyState.classList.contains('hidden')) {
+                const btnErr = document.getElementById('btn-pdf');
+                const prevHtml = btnErr.innerHTML;
+                btnErr.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Nessuna parola!`;
+                btnErr.classList.replace('bg-teal-600', 'bg-amber-600');
+                setTimeout(() => {
+                    btnErr.innerHTML = prevHtml;
+                    btnErr.classList.replace('bg-amber-600', 'bg-teal-600');
+                }, 2000);
+                return;
+            }
+
+            const btn = document.getElementById('btn-pdf');
+            const originalBtnText = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Generazione PDF...`;
+            btn.disabled = true;
+
+            // Determina il nome del file in base al titolo impostato
+            const boardTitleInput = document.getElementById('board-title-input').value.trim();
+            const fileName = boardTitleInput ? `tabella-caa-${boardTitleInput.toLowerCase().replace(/\s+/g, '-')}.pdf` : 'tabella-caa.pdf';
+
+            // Assicura che tutte le immagini siano caricate prima di generare il canvas
+            const images = printElement.querySelectorAll('img');
+            const loadPromises = Array.from(images).map(img => {
+                if (img.complete) return Promise.resolve();
+                return new Promise(resolve => {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                });
+            });
+
+            await Promise.all(loadPromises);
+
+            const options = {
+                margin:       10,
+                filename:     fileName,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { 
+                    scale: 2, 
+                    useCORS: true, 
+                    logging: false,
+                    scrollX: 0,
+                    scrollY: 0
+                },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            try {
+                await html2pdf().set(options).from(printElement).save();
+            } catch (error) {
+                console.error("Errore durante la generazione del PDF:", error);
+            } finally {
+                btn.innerHTML = originalBtnText;
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
