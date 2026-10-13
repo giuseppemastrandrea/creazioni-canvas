@@ -4,270 +4,132 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Creazioni Canvas - Attività Interattive per la Scuola</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --primary: #4f46e5;
-      --primary-hover: #4338ca;
-      --bg-gradient-start: #f4f7fe;
-      --bg-gradient-end: #eef2ff;
-      --card-bg: #ffffff;
-      --text-main: #1e293b;
-      --text-muted: #64748b;
-      --border-color: #e2e8f0;
-      --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
     body {
       font-family: 'Nunito', sans-serif;
-      background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
-      color: var(--text-main);
+      background: linear-gradient(135deg, #f4f7fe 0%, #eef2ff 100%);
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      line-height: 1.6;
     }
-
-    header {
-      text-align: center;
-      padding: 3rem 1.5rem 2rem;
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--border-color);
-      box-shadow: var(--shadow-sm);
+    .font-fredoka {
+      font-family: 'Fredoka', cursive, sans-serif;
     }
-
-    .header-badge {
-      display: inline-block;
-      background: #e0e7ff;
-      color: var(--primary);
-      font-family: 'Fredoka', sans-serif;
-      font-weight: 600;
-      font-size: 0.9rem;
-      padding: 0.35rem 1rem;
-      border-radius: 9999px;
-      margin-bottom: 1rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+    .card-hover {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-
-    h1 {
-      font-family: 'Fredoka', sans-serif;
-      font-size: 2.5rem;
-      font-weight: 700;
-      color: #0f172a;
-      margin-bottom: 0.5rem;
-    }
-
-    header p {
-      color: var(--text-muted);
-      font-size: 1.15rem;
-      max-width: 600px;
-      margin: 0 auto;
-    }
-
-    main {
-      flex: 1;
-      max-width: 1200px;
-      width: 100%;
-      margin: 0 auto;
-      padding: 3rem 1.5rem;
-    }
-
-    .section-title {
-      font-family: 'Fredoka', sans-serif;
-      font-size: 1.5rem;
-      color: #334155;
-      margin-bottom: 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 2rem;
-    }
-
-    .card {
-      background: var(--card-bg);
-      border-radius: 1.25rem;
-      overflow: hidden;
-      border: 1px solid var(--border-color);
-      box-shadow: var(--shadow-sm);
-      transition: all 0.3s ease;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .card:hover {
+    .card-hover:hover {
       transform: translateY(-6px);
-      box-shadow: var(--shadow-lg);
-      border-color: #c7d2fe;
-    }
-
-    .card-banner {
-      height: 140px;
-      background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 4rem;
-      position: relative;
-    }
-
-    .card-content {
-      padding: 1.5rem;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .card-title {
-      font-family: 'Fredoka', sans-serif;
-      font-size: 1.35rem;
-      color: #0f172a;
-      margin-bottom: 0.5rem;
-    }
-
-    .card-description {
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      margin-bottom: 1.25rem;
-      flex: 1;
-    }
-
-    .card-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .tag {
-      background: #f1f5f9;
-      color: #475569;
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 0.25rem 0.6rem;
-      border-radius: 0.5rem;
-    }
-
-    .btn-play {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      background-color: var(--primary);
-      color: #ffffff;
-      text-decoration: none;
-      font-family: 'Fredoka', sans-serif;
-      font-weight: 600;
-      font-size: 1rem;
-      padding: 0.75rem 1.25rem;
-      border-radius: 0.75rem;
-      transition: background-color 0.2s ease, transform 0.1s ease;
-    }
-
-    .btn-play:hover {
-      background-color: var(--primary-hover);
-    }
-
-    .btn-play:active {
-      transform: scale(0.98);
-    }
-
-    footer {
-      text-align: center;
-      padding: 2rem 1.5rem;
-      background: #ffffff;
-      border-top: 1px solid var(--border-color);
-      color: var(--text-muted);
-      font-size: 0.9rem;
-    }
-
-    footer a {
-      color: var(--primary);
-      text-decoration: none;
-      font-weight: 600;
-    }
-
-    footer a:hover {
-      text-decoration: underline;
-    }
-
-    @media (max-width: 640px) {
-      h1 {
-        font-size: 2rem;
-      }
-      .grid {
-        grid-template-columns: 1fr;
-      }
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     }
   </style>
 </head>
-<body>
+<body class="text-slate-800 flex flex-col justify-between min-h-screen">
 
-  <header>
-    <span class="header-badge">Didattica Interattiva</span>
-    <h1>Creazioni Canvas</h1>
-    <p>Raccolta di risorse interattive, giochi educativi e applicazioni web per la scuola.</p>
+  <header class="w-full text-center py-10 px-4 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <div class="max-w-4xl mx-auto">
+      <span class="inline-block bg-indigo-100 text-indigo-700 font-fredoka font-semibold text-xs sm:text-sm px-4 py-1.5 rounded-full mb-3 uppercase tracking-wider">
+        🏫 Attività Didattiche Interattive
+      </span>
+      <h1 class="font-fredoka text-4xl sm:text-5xl font-bold text-slate-900 mb-2">
+        Creazioni Canvas
+      </h1>
+      <p class="text-slate-600 text-base sm:text-lg max-w-xl mx-auto font-medium">
+        Raccolta di risorse interattive, giochi educativi e applicativi web per la scuola primaria.
+      </p>
+    </div>
   </header>
 
-  <main>
-    <h2 class="section-title">✨ Giochi e Attività Disponibili</h2>
+  <main class="max-w-6xl w-full mx-auto px-4 py-10 flex-grow">
+    <div class="flex items-center justify-between mb-8">
+      <h2 class="font-fredoka text-2xl sm:text-3xl font-bold text-slate-800 flex items-center gap-2">
+        <span>✨</span> Giochi e Attività
+      </h2>
+      <span class="text-sm text-slate-500 font-semibold bg-slate-200/60 px-3 py-1 rounded-lg">
+        2 Attività
+      </span>
+    </div>
     
-    <div class="grid">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 
-      <!-- Memory dell'Autunno -->
-      <article class="card">
-        <div class="card-banner">
-          🍂 🐿️
-        </div>
-        <div class="card-content">
-          <h3 class="card-title">Memory dell'Autunno</h3>
-          <p class="card-description">
-            Gioco di memoria 6x6 con 18 coppie di carte a tema autunnale. Ogni carta include l'emoji e la descrizione in stampatello maiuscolo per facilitare la lettura.
-          </p>
-          <div class="card-tags">
-            <span class="tag">#Memory</span>
-            <span class="tag">#Autunno</span>
-            <span class="tag">#StampatelloMaiuscolo</span>
-            <span class="tag">#ScuolaPrimaria</span>
+      <!-- Memory dell'Autunno Card -->
+      <article class="bg-white rounded-3xl overflow-hidden border border-slate-200/80 shadow-md card-hover flex flex-col justify-between">
+        <div>
+          <div class="h-40 bg-gradient-to-br from-amber-100 to-orange-200 flex items-center justify-center text-6xl shadow-inner">
+            🍂 🧠
           </div>
-          <a href="memory_dell_autunno.html" class="btn-play">
-            Gioca Ora ➔
+          <div class="p-6">
+            <h3 class="font-fredoka text-2xl font-bold text-slate-900 mb-2">
+              Memory dell'Autunno
+            </h3>
+            <p class="text-slate-600 text-sm leading-relaxed mb-4">
+              Gioco di memoria con griglia 6x6 e 18 coppie. Carte con emoji e nomi in stampatello maiuscolo per favorire la lettura e l'associazione.
+            </p>
+            <div class="flex flex-wrap gap-1.5 mb-6">
+              <span class="bg-amber-50 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-md border border-amber-200/60">#Memory</span>
+              <span class="bg-orange-50 text-orange-800 text-xs font-bold px-2.5 py-1 rounded-md border border-orange-200/60">#Autunno</span>
+              <span class="bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-1 rounded-md">#Stampatello</span>
+            </div>
+          </div>
+        </div>
+        <div class="px-6 pb-6 pt-0">
+          <a href="memory_dell_autunno.html" class="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-fredoka font-semibold py-3 px-5 rounded-2xl shadow-lg shadow-indigo-200 transition">
+            Gioca Ora <span>➔</span>
           </a>
         </div>
       </article>
 
-      <!-- TEMPLATE PER NUOVE ATTIVITÀ (Copia e incolla questo blocco per aggiungere altri giochi) -->
-      <!--
-      <article class="card">
-        <div class="card-banner" style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);">
-          🎮 🎨
-        </div>
-        <div class="card-content">
-          <h3 class="card-title">Titolo Nuova Attività</h3>
-          <p class="card-description">
-            Breve descrizione del gioco o dell'attività didattica.
-          </p>
-          <div class="card-tags">
-            <span class="tag">#Didattica</span>
-            <span class="tag">#Gioco</span>
+      <!-- Ruota dell'Autunno Card -->
+      <article class="bg-white rounded-3xl overflow-hidden border border-slate-200/80 shadow-md card-hover flex flex-col justify-between">
+        <div>
+          <div class="h-40 bg-gradient-to-br from-orange-100 to-amber-200 flex items-center justify-center text-6xl shadow-inner">
+            🌀 🍁
           </div>
-          <a href="nome_nuovo_file.html" class="btn-play">
-            Apri ➔
+          <div class="p-6">
+            <h3 class="font-fredoka text-2xl font-bold text-slate-900 mb-2">
+              Ruota dell'Autunno
+            </h3>
+            <p class="text-slate-600 text-sm leading-relaxed mb-4">
+              Ruota della fortuna interattiva con sole emoji. Estrai l'elemento, leggi il nome in stampatello maiuscolo e completa la sfida didattica!
+            </p>
+            <div class="flex flex-wrap gap-1.5 mb-6">
+              <span class="bg-amber-50 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-md border border-amber-200/60">#Ruota</span>
+              <span class="bg-orange-50 text-orange-800 text-xs font-bold px-2.5 py-1 rounded-md border border-orange-200/60">#Autunno</span>
+              <span class="bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-1 rounded-md">#Didattica</span>
+            </div>
+          </div>
+        </div>
+        <div class="px-6 pb-6 pt-0">
+          <a href="ruota_dell_autunno.html" class="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-fredoka font-semibold py-3 px-5 rounded-2xl shadow-lg shadow-indigo-200 transition">
+            Gira la Ruota <span>➔</span>
+          </a>
+        </div>
+      </article>
+
+      <!-- TEMPLATE PER PROSSIME ATTIVITÀ (Incolla qui per aggiungere nuovi file HTML) -->
+      <!--
+      <article class="bg-white rounded-3xl overflow-hidden border border-slate-200/80 shadow-md card-hover flex flex-col justify-between">
+        <div>
+          <div class="h-40 bg-gradient-to-br from-blue-100 to-indigo-200 flex items-center justify-center text-6xl shadow-inner">
+            🎮 🎨
+          </div>
+          <div class="p-6">
+            <h3 class="font-fredoka text-2xl font-bold text-slate-900 mb-2">
+              Titolo Nuova Attività
+            </h3>
+            <p class="text-slate-600 text-sm leading-relaxed mb-4">
+              Breve descrizione del gioco o dell'attività.
+            </p>
+            <div class="flex flex-wrap gap-1.5 mb-6">
+              <span class="bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-1 rounded-md">#Tag</span>
+            </div>
+          </div>
+        </div>
+        <div class="px-6 pb-6 pt-0">
+          <a href="nome_file.html" class="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-fredoka font-semibold py-3 px-5 rounded-2xl transition">
+            Apri <span>➔</span>
           </a>
         </div>
       </article>
@@ -276,10 +138,10 @@
     </div>
   </main>
 
-  <footer>
+  <footer class="w-full text-center py-6 px-4 bg-white border-t border-slate-200 text-slate-500 text-sm">
     <p>
       Sito creato con ❤️ da <strong>Giuseppe Mastrandrea</strong> | 
-      <a href="https://github.com/giuseppemastrandrea/creazioni-canvas" target="_blank" rel="noopener">
+      <a href="https://github.com/giuseppemastrandrea/creazioni-canvas" target="_blank" rel="noopener noreferrer" class="text-indigo-600 font-bold hover:underline">
         Repository GitHub
       </a>
     </p>
