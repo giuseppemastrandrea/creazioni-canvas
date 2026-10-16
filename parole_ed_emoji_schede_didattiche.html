@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parole & Emoji - Schede Didattiche Scuola dell'Infanzia</title>
+    <!-- Tailwind CSS for modern responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka & Outfit for kid-friendly, highly legible typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f8fafc;
+        }
+        
+        .font-fredoka {
+            font-family: 'Fredoka', cursive, sans-serif;
+        }
+
+        /* Tile box styling for missing letter blanks */
+        .letter-box {
+            width: 2.2rem;
+            height: 2.6rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.35rem;
+            font-weight: 700;
+            border-radius: 0.375rem;
+            transition: all 0.15s ease-in-out;
+            user-select: none;
+        }
+
+        .letter-box.filled {
+            border: 2px solid #334155;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+
+        .letter-box.missing {
+            border: 2px dashed #94a3b8;
+            background-color: #ffffff;
+            color: transparent;
+            position: relative;
+        }
+
+        .letter-box.missing::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            width: 60%;
+            height: 2px;
+            background-color: #cbd5e1;
+        }
+
+        /* Print Specific CSS Rules */
+        @media print {
+            /* Hide all UI control elements, sidebar, and headers */
+            body {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .print-only {
+                display: block !important;
+            }
+
+            #worksheet-area {
+                padding: 0 !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                background: white !important;
+            }
+
+            #printable-worksheet {
+                width: 100% !important;
+                max-width: 100% !important;
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+            }
+
+            .grid-card {
+                break-inside: avoid;
+                border: 2px solid #cbd5e1 !important;
+                box-shadow: none !important;
+            }
+
+            .letter-box.filled {
+                border-color: #000000 !important;
+                color: #000000 !important;
+                background-color: #ffffff !important;
+            }
+
+            .letter-box.missing {
+                border: 2px dashed #64748b !important;
+                background-color: #ffffff !important;
+            }
+
+            .letter-box.missing::after {
+                background-color: #94a3b8 !important;
+            }
+
+            @page {
+                size: A4 portrait;
+                margin: 12mm 10mm;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col">
+
+    <!-- Application Header -->
+    <header class="no-print bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl p-2 bg-white/20 rounded-2xl backdrop-blur-sm shadow-inner">✏️</span>
+                <div>
+                    <h1 class="text-2xl font-bold font-fredoka tracking-wide">Parole & Emoji</h1>
+                    <p class="text-xs text-amber-100 font-medium">Generatore di Schede Didattiche per la Scuola dell'Infanzia</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button onclick="window.print()" class="flex items-center gap-2 bg-white text-orange-600 hover:bg-orange-50 font-bold px-5 py-2.5 rounded-xl shadow-md transition transform active:scale-95 text-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                    </svg>
+                    <span>Download / Stampa PDF</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <div class="max-w-7xl mx-auto w-full px-4 py-6 flex-grow flex flex-col lg:flex-row gap-6">
+        
+        <!-- Sidebar Controls (Hidden when printing) -->
+        <aside class="no-print lg:w-80 flex-shrink-0 flex flex-col gap-5">
+            
+            <!-- Topic / Theme Selection Card -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                <label class="block text-sm font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <span>🎨</span> Scegli Argomento
+                </label>
+                <select id="theme-select" onchange="changeTheme(this.value)" class="w-full bg-slate-50 border border-slate-300 text-slate-800 rounded-xl p-3 font-semibold focus:ring-2 focus:ring-orange-400 focus:outline-none cursor-pointer">
+                    <!-- Populated via JavaScript -->
+                </select>
+                <p class="text-xs text-slate-500 mt-2">Seleziona uno dei temi predefiniti per aggiornare la griglia 3x3.</p>
+            </div>
+
+            <!-- Missing Letter Pattern Selector -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                <label class="block text-sm font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <span>🧩</span> Modalità Lettere Mancanti
+                </label>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 hover:bg-amber-50 cursor-pointer transition">
+                        <input type="radio" name="difficulty" value="last" checked onchange="setDifficulty('last')" class="w-4 h-4 text-orange-500 focus:ring-orange-400">
+                        <div>
+                            <span class="block font-bold text-xs text-slate-800">Ultima Lettera</span>
+                            <span class="block text-[11px] text-slate-500">Es. L E O N _</span>
+                        </div>
+                    </label>
+                    
+                    <label class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 hover:bg-amber-50 cursor-pointer transition">
+                        <input type="radio" name="difficulty" value="vowels" onchange="setDifficulty('vowels')" class="w-4 h-4 text-orange-500 focus:ring-orange-400">
+                        <div>
+                            <span class="block font-bold text-xs text-slate-800">Tutte le Vocali</span>
+                            <span class="block text-[11px] text-slate-500">Es. L _ O N _</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 hover:bg-amber-50 cursor-pointer transition">
+                        <input type="radio" name="difficulty" value="random" onchange="setDifficulty('random')" class="w-4 h-4 text-orange-500 focus:ring-orange-400">
+                        <div>
+                            <span class="block font-bold text-xs text-slate-800">Casuale (2 Lettere)</span>
+                            <span class="block text-[11px] text-slate-500">Scomparsa di 2 lettere a caso</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 hover:bg-amber-50 cursor-pointer transition">
+                        <input type="radio" name="difficulty" value="first" onchange="setDifficulty('first')" class="w-4 h-4 text-orange-500 focus:ring-orange-400">
+                        <div>
+                            <span class="block font-bold text-xs text-slate-800">Prima Lettera</span>
+                            <span class="block text-[11px] text-slate-500">Es. _ E O N E</span>
+                        </div>
+                    </label>
+                </div>
+
+                <button onclick="regenerateMasks()" class="w-full mt-4 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold py-2 px-3 rounded-xl text-xs transition flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    <span>Rigenera Maschera Lettere</span>
+                </button>
+            </div>
+
+            <!-- Custom Header & Title Options -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                <label class="block text-sm font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <span>✏️</span> Personalizza Scheda
+                </label>
+
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Titolo della Scheda</label>
+                        <input type="text" id="custom-title" value="COMPLETA LE PAROLE" oninput="updateSheetTitle(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold focus:ring-2 focus:ring-orange-400 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Istruzione per gli Alunni</label>
+                        <input type="text" id="custom-subtitle" value="Osserva le immagini e inserisci le lettere mancanti nelle caselle vuote." oninput="updateSheetSubtitle(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-orange-400 focus:outline-none">
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                        <span class="text-xs font-medium text-slate-700">Mostra Intestazione Nome/Data</span>
+                        <input type="checkbox" id="toggle-student-info" checked onchange="toggleStudentInfo(this.checked)" class="w-4 h-4 text-orange-500 rounded focus:ring-orange-400 cursor-pointer">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instructions Box -->
+            <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-xs text-blue-800 space-y-1.5">
+                <p class="font-bold flex items-center gap-1 text-blue-900">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Suggerimento per l'Insegnante:
+                </p>
+                <p>Puoi fare <strong>click direttamente su qualsiasi lettera</strong> nella griglia a destra per nasconderla o mostrarla manualmente prima della stampa!</p>
+            </div>
+
+        </aside>
+
+        <!-- Worksheet Display Area -->
+        <main id="worksheet-area" class="flex-grow flex justify-center items-start">
+            
+            <div id="printable-worksheet" class="w-full max-w-[210mm] bg-white rounded-2xl p-8 shadow-xl border border-slate-200 min-h-[290mm] flex flex-col justify-between transition-all">
+                
+                <!-- Printable Header -->
+                <div>
+                    <!-- Student Info Block (Nome & Data) -->
+                    <div id="student-info-block" class="flex justify-between items-center border-b-2 border-slate-300 pb-3 mb-5 text-sm font-bold text-slate-700">
+                        <div class="flex items-center gap-2">
+                            <span>NOME:</span>
+                            <span class="inline-block border-b-2 border-dotted border-slate-400 w-48 sm:w-64 h-5"></span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span>DATA:</span>
+                            <span class="inline-block border-b-2 border-dotted border-slate-400 w-28 h-5"></span>
+                        </div>
+                    </div>
+
+                    <!-- Worksheet Title & Topic Banner -->
+                    <div class="text-center mb-6">
+                        <span id="sheet-theme-badge" class="inline-block bg-orange-100 text-orange-800 font-bold px-3 py-1 rounded-full text-xs tracking-wider uppercase mb-2">
+                            GLI ANIMALI
+                        </span>
+                        <h2 id="sheet-title-display" class="text-2xl sm:text-3xl font-bold font-fredoka text-slate-900 tracking-wide">
+                            COMPLETA LE PAROLE
+                        </h2>
+                        <p id="sheet-subtitle-display" class="text-xs sm:text-sm text-slate-600 mt-1 font-medium">
+                            Osserva le immagini e inserisci le lettere mancanti nelle caselle vuote.
+                        </p>
+                    </div>
+
+                    <!-- 3x3 Emoji Grid -->
+                    <div id="emoji-grid" class="grid grid-cols-3 gap-4 sm:gap-6 my-auto">
+                        <!-- Populated by JavaScript with 9 Grid Cards -->
+                    </div>
+                </div>
+
+                <!-- Printable Footer / Branding -->
+                <div class="mt-8 pt-4 border-t border-slate-200 flex justify-between items-center text-[10px] text-slate-400">
+                    <span>Scuola dell'Infanzia &bull; Scheda Didattica di Pregrafismo e Fonologia</span>
+                    <span class="font-semibold text-slate-500">Parole & Emoji</span>
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+    <script>
+        // Preset thematic data suitable for preschool Italian phonics & vocabulary
+        const themesData = [
+            {
+                id: "animali",
+                name: "🐱 Gli Animali",
+                badge: "GLI ANIMALI",
+                items: [
+                    { emoji: "🦁", word: "LEONE" },
+                    { emoji: "🐱", word: "GATTO" },
+                    { emoji: "🐶", word: "CANE" },
+                    { emoji: "🐸", word: "RANA" },
+                    { emoji: "🐻", word: "ORSO" },
+                    { emoji: "🐟", word: "PESCE" },
+                    { emoji: "🦉", word: "GUFO" },
+                    { emoji: "🦆", word: "ANATRA" },
+                    { emoji: "🐭", word: "TOPO" }
+                ]
+            },
+            {
+                id: "frutta",
+                name: "🍎 La Frutta",
+                badge: "LA FRUTTA",
+                items: [
+                    { emoji: "🍎", word: "MELA" },
+                    { emoji: "🍌", word: "BANANA" },
+                    { emoji: "🍐", word: "PERA" },
+                    { emoji: "🍋", word: "LIMONE" },
+                    { emoji: "🍇", word: "UVA" },
+                    { emoji: "🍓", word: "FRAGOLA" },
+                    { emoji: "🍊", word: "ARANCIA" },
+                    { emoji: "🍒", word: "CILIEGIA" },
+                    { emoji: "🍉", word: "COCOMERO" }
+                ]
+            },
+            {
+                id: "trasporti",
+                name: "🚗 I Mezzi di Trasporto",
+                badge: "MEZZI DI TRASPORTO",
+                items: [
+                    { emoji: "🚗", word: "AUTO" },
+                    { emoji: "🚂", word: "TRENO" },
+                    { emoji: "✈️", word: "AEREO" },
+                    { emoji: "🚢", word: "NAVE" },
+                    { emoji: "🚲", word: "BICI" },
+                    { emoji: "🚌", word: "AUTOBUS" },
+                    { emoji: "🏍️", word: "MOTO" },
+                    { emoji: "🚀", word: "RAZZO" },
+                    { emoji: "🚁", word: "ELICOTTERO" }
+                ]
+            },
+            {
+                id: "natura",
+                name: "☀️ La Natura e il Tempo",
+                badge: "LA NATURA",
+                items: [
+                    { emoji: "☀️", word: "SOLE" },
+                    { emoji: "🌙", word: "LUNA" },
+                    { emoji: "⭐", word: "STELLA" },
+                    { emoji: "☁️", word: "NUVOLA" },
+                    { emoji: "🌸", word: "FIORE" },
+                    { emoji: "🌳", word: "ALBERO" },
+                    { emoji: "🌧️", word: "PIOGGIA" },
+                    { emoji: "🌈", word: "ARCOBALENO" },
+                    { emoji: "🏔️", word: "MONTAGNA" }
+                ]
+            },
+            {
+                id: "cibo",
+                name: "🍕 Cibo e Alimenti",
+                badge: "I CIBI",
+                items: [
+                    { emoji: "🍕", word: "PIZZA" },
+                    { emoji: "🍞", word: "PANE" },
+                    { emoji: "🥛", word: "LATTE" },
+                    { emoji: "🧀", word: "FORMAGGIO" },
+                    { emoji: "🥚", word: "UOVO" },
+                    { emoji: "🍦", word: "GELATO" },
+                    { emoji: "🎂", word: "TORTA" },
+                    { emoji: "🥕", word: "CAROTA" },
+                    { emoji: "🥔", word: "PATATA" }
+                ]
+            },
+            {
+                id: "scuola",
+                name: "🎒 Scuola e Cancelleria",
+                badge: "LA SCUOLA",
+                items: [
+                    { emoji: "🎒", word: "ZAINO" },
+                    { emoji: "✏️", word: "MATITA" },
+                    { emoji: "📖", word: "LIBRO" },
+                    { emoji: "✂️", word: "FORBICI" },
+                    { emoji: "🎨", word: "COLORE" },
+                    { emoji: "📐", word: "RIGA" },
+                    { emoji: "🖌️", word: "PENNELLO" },
+                    { emoji: "🔔", word: "CAMPANA" },
+                    { emoji: "🏫", word: "SCUOLA" }
+                ]
+            }
+        ];
+
+        // Application State
+        let currentThemeIndex = 0;
+        let currentDifficulty = 'last';
+        // Stores mask boolean state for each word letter: true = visible, false = missing
+        let wordMasks = [];
+
+        // Italian Vowels Helper
+        const VOWELS = ['A', 'E', 'I', 'O', 'U'];
+
+        // Initialize Application
+        window.addEventListener('DOMContentLoaded', () => {
+            populateThemeSelect();
+            loadTheme(0);
+        });
+
+        // Populate Dropdown Options
+        function populateThemeSelect() {
+            const selectEl = document.getElementById('theme-select');
+            selectEl.innerHTML = themesData.map((theme, index) => 
+                `<option value="${index}">${theme.name}</option>`
+            ).join('');
+        }
+
+        // Change Current Theme
+        function changeTheme(index) {
+            currentThemeIndex = parseInt(index, 10);
+            loadTheme(currentThemeIndex);
+        }
+
+        // Load Theme & Generate Initial Masks
+        function loadTheme(index) {
+            const theme = themesData[index];
+            document.getElementById('sheet-theme-badge').textContent = theme.badge;
+            generateMasks();
+        }
+
+        // Generate missing letter masks based on selected difficulty mode
+        function generateMasks() {
+            const currentTheme = themesData[currentThemeIndex];
+            wordMasks = currentTheme.items.map(item => {
+                const word = item.word;
+                const length = word.length;
+                let mask = new Array(length).fill(true); // default all visible
+
+                if (currentDifficulty === 'last') {
+                    // Hide last letter
+                    mask[length - 1] = false;
+                } else if (currentDifficulty === 'vowels') {
+                    // Hide all vowels
+                    for (let i = 0; i < length; i++) {
+                        if (VOWELS.includes(word[i])) {
+                            mask[i] = false;
+                        }
+                    }
+                } else if (currentDifficulty === 'first') {
+                    // Hide first letter
+                    mask[0] = false;
+                } else if (currentDifficulty === 'random') {
+                    // Hide 2 random letters
+                    if (length <= 3) {
+                        mask[length - 1] = false;
+                    } else {
+                        let hiddenCount = 0;
+                        while (hiddenCount < 2) {
+                            let randIdx = Math.floor(Math.random() * length);
+                            if (mask[randIdx] === true) {
+                                mask[randIdx] = false;
+                                hiddenCount++;
+                            }
+                        }
+                    }
+                }
+
+                return mask;
+            });
+
+            renderGrid();
+        }
+
+        // Change Difficulty Mode
+        function setDifficulty(mode) {
+            currentDifficulty = mode;
+            generateMasks();
+        }
+
+        // Regenerate current masks
+        function regenerateMasks() {
+            generateMasks();
+        }
+
+        // Toggle letter visibility manually when clicked
+        function toggleLetter(itemIndex, letterIndex) {
+            if (wordMasks[itemIndex]) {
+                wordMasks[itemIndex][letterIndex] = !wordMasks[itemIndex][letterIndex];
+                renderGrid();
+            }
+        }
+
+        // Render 3x3 Grid
+        function renderGrid() {
+            const gridContainer = document.getElementById('emoji-grid');
+            const currentTheme = themesData[currentThemeIndex];
+
+            gridContainer.innerHTML = currentTheme.items.map((item, itemIdx) => {
+                const letters = item.word.split('');
+                const mask = wordMasks[itemIdx] || [];
+
+                const letterBoxesHtml = letters.map((char, charIdx) => {
+                    const isVisible = mask[charIdx];
+                    return `
+                        <div 
+                            onclick="toggleLetter(${itemIdx}, ${charIdx})"
+                            title="Fai click per nascondere o mostrare questa lettera"
+                            class="letter-box no-select cursor-pointer ${isVisible ? 'filled' : 'missing'}"
+                        >
+                            ${isVisible ? char : ''}
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="grid-card bg-slate-50 hover:bg-slate-100/80 border-2 border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-between text-center transition shadow-sm hover:shadow-md">
+                        <!-- Emoji Icon Container -->
+                        <div class="text-5xl sm:text-6xl mb-3 my-auto leading-none select-none filter drop-shadow-sm transform hover:scale-110 transition duration-200">
+                            ${item.emoji}
+                        </div>
+                        
+                        <!-- Letter Box Container -->
+                        <div class="flex flex-wrap justify-center items-center gap-1 sm:gap-1.5 w-full mt-2">
+                            ${letterBoxesHtml}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Customize Header Title
+        function updateSheetTitle(val) {
+            document.getElementById('sheet-title-display').textContent = val || 'COMPLETA LE PAROLE';
+        }
+
+        // Customize Subtitle
+        function updateSheetSubtitle(val) {
+            document.getElementById('sheet-subtitle-display').textContent = val;
+        }
+
+        // Toggle Student Info Block (Nome / Data)
+        function toggleStudentInfo(checked) {
+            const block = document.getElementById('student-info-block');
+            if (checked) {
+                block.classList.remove('hidden');
+                block.classList.add('flex');
+            } else {
+                block.classList.remove('flex');
+                block.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
